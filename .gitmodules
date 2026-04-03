@@ -1,0 +1,6 @@
+[submodule "external/open-trading-api"]
+	path = external/open-trading-api
+	url = https://github.com/koreainvestment/open-trading-api
+[submodule "external/kis-ai-extensions"]
+	path = external/kis-ai-extensions
+	url = https://github.com/koreainvestment/kis-ai-extensions
