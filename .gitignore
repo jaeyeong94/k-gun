@@ -1,3 +1,8 @@
 .idea/
 .credential
 .omc/
+.claude
+.mcp.json
+AGENTS.md
+strategy_builder
+backtester
