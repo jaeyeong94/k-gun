@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useStrategies } from "@/hooks/use-strategies";
 import {
@@ -12,8 +13,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Plus, Blocks, Library } from "lucide-react";
-import type { StrategyCategory } from "@/types/strategy";
+import type { Strategy, StrategyCategory } from "@/types/strategy";
 import { CATEGORY_LABELS } from "@/types/strategy";
 
 const CATEGORY_COLORS: Record<StrategyCategory, string> = {
@@ -28,6 +35,8 @@ const CATEGORY_COLORS: Record<StrategyCategory, string> = {
 export default function StrategyPage() {
   const { data, isLoading, error } = useStrategies();
   const strategies = data?.strategies ?? [];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = strategies.find((s: Strategy) => s.id === selectedId);
 
   const grouped = strategies.reduce(
     (acc, s) => {
@@ -114,41 +123,94 @@ export default function StrategyPage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((strategy) => (
-              <Link
+              <Card
                 key={strategy.id}
-                href={`/strategy/presets?id=${strategy.id}`}
+                className="cursor-pointer transition-colors hover:bg-muted/50"
+                onClick={() => setSelectedId(strategy.id)}
               >
-                <Card className="cursor-pointer transition-colors hover:bg-muted/50">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-base">
-                        {strategy.name}
-                      </CardTitle>
-                      <Badge
-                        className={
-                          CATEGORY_COLORS[strategy.category] ?? ""
-                        }
-                      >
-                        {CATEGORY_LABELS[strategy.category] ?? strategy.category}
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base">
+                      {strategy.name}
+                    </CardTitle>
+                    <Badge
+                      className={
+                        CATEGORY_COLORS[strategy.category] ?? ""
+                      }
+                    >
+                      {CATEGORY_LABELS[strategy.category] ?? strategy.category}
+                    </Badge>
+                  </div>
+                  <CardDescription>{strategy.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1">
+                    {(strategy.tags ?? []).map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
                       </Badge>
-                    </div>
-                    <CardDescription>{strategy.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-1">
-                      {(strategy.tags ?? []).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       ))}
+
+      {/* Strategy Detail Sheet */}
+      <Sheet open={!!selected} onOpenChange={() => setSelectedId(null)}>
+        <SheetContent>
+          {selected && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selected.name}</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-4">
+                <Badge className={CATEGORY_COLORS[selected.category] ?? ""}>
+                  {CATEGORY_LABELS[selected.category] ?? selected.category}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  {selected.description}
+                </p>
+                {selected.indicators && selected.indicators.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">사용 지표</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {selected.indicators.map((ind: string) => (
+                        <Badge key={ind} variant="outline" className="text-xs">
+                          {ind}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(selected.tags ?? []).length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">태그</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {(selected.tags ?? []).map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="pt-2">
+                  <Button
+                    nativeButton={false}
+                    render={<Link href={`/strategy/builder?preset=${selected.id}`} />}
+                    className="w-full"
+                  >
+                    이 전략으로 빌더 열기
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
