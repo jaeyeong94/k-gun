@@ -102,12 +102,12 @@ function buildGroups(m: PerformanceMetrics): MetricGroup[] {
         { label: "패배율", value: pct(lossRate / 100) },
         {
           label: "평균 수익",
-          value: won(avgWin),
+          value: `${avgWin.toFixed(2)}%`,
           colorClass: "text-red-500",
         },
         {
           label: "평균 손실",
-          value: won(avgLoss),
+          value: `${avgLoss.toFixed(2)}%`,
           colorClass: "text-blue-500",
         },
         { label: "손익비", value: num(plRatio) },
