@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   useBacktestHistory,
@@ -8,6 +9,7 @@ import {
   type BacktestHistoryItem,
 } from "@/hooks/use-backtest-history";
 import { apiGet } from "@/lib/api/client";
+import { getStockName } from "@/components/stock/stock-search-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,8 +26,45 @@ import {
   GitCompareArrows,
   X,
   Trophy,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
+
+// --- 전략 한글명 매핑 ---
+const STRATEGY_NAMES: Record<string, string> = {
+  sma_crossover: "SMA 골든/데드 크로스",
+  momentum: "모멘텀",
+  week52_high: "52주 신고가 돌파",
+  consecutive_moves: "연속 상승·하락",
+  ma_divergence: "이동평균 이격도",
+  false_breakout: "추세 돌파 후 이탈",
+  strong_close: "강한 종가",
+  volatility_breakout: "변동성 축소 후 확장",
+  short_term_reversal: "단기 반전",
+  trend_filter_signal: "추세 필터 + 시그널",
+  golden_cross: "골든크로스",
+  disparity: "이격도",
+  breakout_fail: "돌파 실패",
+  volatility: "변동성 확장",
+  mean_reversion: "평균회귀",
+  trend_filter: "추세 필터",
+  consecutive: "연속 상승/하락",
+};
+
+function getStrategyName(id: string): string {
+  return STRATEGY_NAMES[id] ?? id;
+}
+
+function formatStockDisplay(symbols: string): string {
+  return symbols
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .map((code) => {
+      const name = getStockName(code.trim());
+      return name ? `${name}(${code.trim()})` : code.trim();
+    })
+    .join(", ");
+}
 
 // --- Helpers ---
 
@@ -41,7 +80,7 @@ function formatDate(d: string | null): string {
 
 function formatDateTime(d: string | null): string {
   if (!d) return "-";
-  return d.replace("T", " ").slice(0, 19);
+  return d.replace("T", " ").slice(0, 16);
 }
 
 // --- Comparison types ---
@@ -53,8 +92,6 @@ interface FullHistoryItem extends BacktestHistoryItem {
         total_return?: number;
         annual_return?: number;
         max_drawdown?: number;
-        start_equity?: number;
-        end_equity?: number;
       };
       risk?: {
         sharpe_ratio?: number;
@@ -118,8 +155,8 @@ const comparisonMetrics: MetricRow[] = [
     label: "총 거래 수",
     key: "total_orders",
     getValue: (item) => item.result?.metrics?.trading?.total_orders ?? null,
-    format: (v) => (v != null ? String(v) : "-"),
-    higherIsBetter: false, // neutral
+    format: (v) => (v != null ? `${v}회` : "-"),
+    higherIsBetter: false,
   },
   {
     label: "승률",
@@ -173,10 +210,10 @@ function ComparisonView({
               <tr className="border-b text-muted-foreground">
                 <th className="py-2 pr-4 text-left font-medium">지표</th>
                 {items.map((item) => (
-                  <th key={item.id} className="py-2 px-3 text-right font-medium min-w-[120px]">
-                    <div>{item.strategyId}</div>
+                  <th key={item.id} className="py-2 px-4 text-right font-medium min-w-[140px]">
+                    <div>{getStrategyName(item.strategyId)}</div>
                     <div className="text-xs font-normal text-muted-foreground">
-                      {item.symbols}
+                      {formatStockDisplay(item.symbols)}
                     </div>
                   </th>
                 ))}
@@ -204,7 +241,7 @@ function ComparisonView({
                       return (
                         <td
                           key={items[idx].id}
-                          className={`py-2.5 px-3 text-right font-mono ${
+                          className={`py-2.5 px-4 text-right font-mono ${
                             isBest ? "text-green-600 font-semibold" : ""
                           }`}
                         >
@@ -229,6 +266,7 @@ function ComparisonView({
 // --- Main Page ---
 
 export default function BacktestHistoryPage() {
+  const router = useRouter();
   const { data: history, isLoading } = useBacktestHistory();
   const deleteMutation = useDeleteBacktestHistory();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -264,32 +302,33 @@ export default function BacktestHistoryPage() {
     });
   };
 
+  const handleReplay = (item: BacktestHistoryItem) => {
+    // 백테스트 페이지로 이동하면서 파라미터 전달
+    const params = new URLSearchParams({
+      strategy: item.strategyId,
+      symbols: item.symbols,
+      start: item.startDate ?? "",
+      end: item.endDate ?? "",
+    });
+    router.push(`/backtest?${params.toString()}`);
+  };
+
   const handleCompare = async () => {
     if (!history) return;
     setLoadingComparison(true);
 
     try {
-      // Fetch full result data for selected items
       const selected = history.filter((h) => selectedIds.has(h.id));
-      // We already have summary metrics, but for full comparison we need stored results
-      // Use a dedicated endpoint or parse from existing data
-      // For now, fetch each result individually via a simple approach:
-      // Re-fetch the full list which includes summary metrics, and use those
       const fullItems: FullHistoryItem[] = selected.map((item) => ({
         ...item,
         result: {
           metrics: {
-            basic: {
-              total_return: item.totalReturn ?? undefined,
-            },
-            risk: {
-              sharpe_ratio: item.sharpe ?? undefined,
-            },
+            basic: { total_return: item.totalReturn ?? undefined },
+            risk: { sharpe_ratio: item.sharpe ?? undefined },
           },
         },
       }));
 
-      // Try to get full data from a detail endpoint
       try {
         const detailPromises = selected.map((item) =>
           apiGet<{ status: string; data: { result: string } }>(
@@ -308,7 +347,7 @@ export default function BacktestHistoryPage() {
           }
         });
       } catch {
-        // Fallback: use summary metrics already available
+        // Fallback: use summary metrics
       }
 
       setComparisonData(fullItems);
@@ -323,7 +362,7 @@ export default function BacktestHistoryPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" render={<Link href="/backtest" />}>
+          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/backtest" />}>
             <ArrowLeft className="size-4" />
           </Button>
           <h1 className="text-2xl font-bold">실행 이력</h1>
@@ -375,6 +414,7 @@ export default function BacktestHistoryPage() {
               <Button
                 variant="outline"
                 className="mt-4"
+                nativeButton={false}
                 render={<Link href="/backtest" />}
               >
                 백테스트 실행하기
@@ -388,14 +428,14 @@ export default function BacktestHistoryPage() {
                     <th className="py-2 pr-2 text-left font-medium w-10">
                       <span className="sr-only">선택</span>
                     </th>
-                    <th className="py-2 text-left font-medium">전략</th>
-                    <th className="py-2 text-left font-medium">종목</th>
-                    <th className="py-2 text-left font-medium">기간</th>
-                    <th className="py-2 text-right font-medium">총수익률</th>
-                    <th className="py-2 text-right font-medium">샤프비율</th>
-                    <th className="py-2 text-left font-medium">실행일시</th>
-                    <th className="py-2 text-right font-medium w-16">
-                      <span className="sr-only">삭제</span>
+                    <th className="py-2 pr-4 text-left font-medium">전략</th>
+                    <th className="py-2 pr-4 text-left font-medium">종목</th>
+                    <th className="py-2 pr-4 text-left font-medium">기간</th>
+                    <th className="py-2 pr-4 text-right font-medium">총수익률</th>
+                    <th className="py-2 pr-6 text-right font-medium">샤프비율</th>
+                    <th className="py-2 pr-4 text-left font-medium">실행일시</th>
+                    <th className="py-2 text-right font-medium w-24">
+                      <span className="sr-only">액션</span>
                     </th>
                   </tr>
                 </thead>
@@ -413,51 +453,60 @@ export default function BacktestHistoryPage() {
                     return (
                       <tr
                         key={item.id}
-                        className={`border-b last:border-0 cursor-pointer transition-colors ${
+                        className={`border-b last:border-0 transition-colors ${
                           isSelected ? "bg-accent/50" : "hover:bg-muted/50"
                         }`}
-                        onClick={() => toggleSelect(item.id)}
                       >
                         <td className="py-2.5 pr-2">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(item.id)}
-                            onClick={(e) => e.stopPropagation()}
                             className="size-4 accent-primary"
                           />
                         </td>
-                        <td className="py-2.5">
-                          <Badge variant="outline">{item.strategyId}</Badge>
+                        <td className="py-2.5 pr-4">
+                          <Badge variant="outline">
+                            {getStrategyName(item.strategyId)}
+                          </Badge>
                         </td>
-                        <td className="py-2.5 font-mono text-xs">
-                          {item.symbols}
+                        <td className="py-2.5 pr-4 text-sm">
+                          {formatStockDisplay(item.symbols)}
                         </td>
-                        <td className="py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-4 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(item.startDate)} ~ {formatDate(item.endDate)}
                         </td>
-                        <td className={`py-2.5 text-right font-mono ${returnColor}`}>
+                        <td className={`py-2.5 pr-4 text-right font-mono ${returnColor}`}>
                           {formatPct(item.totalReturn)}
                         </td>
-                        <td className="py-2.5 text-right font-mono">
+                        <td className="py-2.5 pr-6 text-right font-mono">
                           {item.sharpe != null ? item.sharpe.toFixed(2) : "-"}
                         </td>
-                        <td className="py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-4 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDateTime(item.createdAt)}
                         </td>
                         <td className="py-2.5 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item.id);
-                            }}
-                            disabled={deleteMutation.isPending}
-                            className="size-8 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReplay(item)}
+                              className="size-8 p-0 text-muted-foreground hover:text-primary"
+                              title="다시 실행"
+                            >
+                              <Play className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deleteMutation.isPending}
+                              className="size-8 p-0 text-muted-foreground hover:text-destructive"
+                              title="삭제"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useBacktestStore } from "@/stores/backtest";
 import { useStrategies, useRunBacktest } from "@/hooks/use-backtest";
 import { EquityChart } from "@/components/backtest/equity-chart";
@@ -402,9 +403,22 @@ function TradeTable({ trades, initialCapital }: { trades: TradeInfo[]; initialCa
 
 // --- Main Page ---
 
-export default function BacktestPage() {
+function BacktestPageInner() {
   const store = useBacktestStore();
+  const searchParams = useSearchParams();
   const { data: strategies, isLoading: strategiesLoading } = useStrategies();
+
+  // URL 파라미터에서 초기값 설정 (이력에서 재실행 시)
+  useEffect(() => {
+    const strategy = searchParams.get("strategy");
+    const symbols = searchParams.get("symbols");
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
+    if (strategy) store.setStrategyId(strategy);
+    if (symbols) store.setSymbols(symbols);
+    if (start) store.setStartDate(start);
+    if (end) store.setEndDate(end);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
   const mutation = useRunBacktest();
 
   const selectedStrategy = strategies?.find(
@@ -813,5 +827,13 @@ export default function BacktestPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BacktestPage() {
+  return (
+    <Suspense>
+      <BacktestPageInner />
+    </Suspense>
   );
 }

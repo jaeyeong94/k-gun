@@ -67,27 +67,21 @@ function NotificationSettingsCard() {
   const { enabled, requestPermission, clearNotifications, notifications } =
     useNotificationStore();
 
-  const [permissionStatus, setPermissionStatus] = useState<
-    "granted" | "denied" | "default" | "unsupported"
-  >("default");
+  const getPermission = useCallback((): "granted" | "denied" | "default" | "unsupported" => {
+    if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+    return Notification.permission as "granted" | "denied" | "default";
+  }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setPermissionStatus("unsupported");
-    } else {
-      setPermissionStatus(
-        Notification.permission as "granted" | "denied" | "default",
-      );
-    }
-  }, [enabled]);
+  const [permissionStatus, setPermissionStatus] = useState(getPermission);
+
+  // Re-sync after permission request
+  const syncPermission = useCallback(() => {
+    setPermissionStatus(getPermission());
+  }, [getPermission]);
 
   const handleRequestPermission = async () => {
     await requestPermission();
-    if ("Notification" in window) {
-      setPermissionStatus(
-        Notification.permission as "granted" | "denied" | "default",
-      );
-    }
+    syncPermission();
   };
 
   const statusText: Record<string, string> = {
@@ -233,13 +227,14 @@ export default function SettingsPage() {
   const fetchMasterFileInfo = useCallback(async () => {
     setMasterFile((prev) => ({ ...prev, isLoading: true }));
     try {
-      const res = await fetch("/api/strategy/symbols/info");
+      const res = await fetch("/api/strategy/symbols/status");
       if (!res.ok) throw new Error();
       const data = await res.json();
+      const updated = data.kospi_updated ?? data.kosdaq_updated ?? null;
       setMasterFile({
         kospiCount: data.kospi_count ?? null,
         kosdaqCount: data.kosdaq_count ?? null,
-        lastUpdated: data.last_updated ?? null,
+        lastUpdated: updated ? new Date(updated).toLocaleString("ko-KR") : null,
         isLoading: false,
         isCollecting: false,
       });

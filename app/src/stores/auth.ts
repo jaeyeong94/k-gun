@@ -72,10 +72,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   switchMode: async () => {
+    const currentMode = get().mode;
+    const targetMode = currentMode === "prod" ? "vps" : "prod";
     set({ isLoading: true, error: null });
     try {
       const res = await fetch("/api/strategy/auth/switch-mode", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: targetMode }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
