@@ -256,34 +256,35 @@ function TradeTable({ trades }: { trades: TradeInfo[] }) {
               </tr>
             </thead>
             <tbody>
-              {trades.map((t, i) => (
-                <tr key={`${t.symbol}-${t.timestamp}-${i}`} className="border-b last:border-0">
-                  <td className="py-2 font-mono text-xs text-muted-foreground">
-                    {t.timestamp.slice(0, 16).replace("T", " ")}
-                  </td>
-                  <td className="py-2">{t.symbol}</td>
-                  <td className="py-2 text-center">
-                    <Badge
-                      variant={t.direction === "BUY" ? "destructive" : "secondary"}
-                    >
-                      {t.direction === "BUY" ? "매수" : "매도"}
-                    </Badge>
-                  </td>
-                  <td className="py-2 text-right font-mono">
-                    {formatNumber(t.quantity)}
-                  </td>
-                  <td className="py-2 text-right font-mono">
-                    {formatNumber(t.price)}원
-                  </td>
-                  <td className="py-2 text-right font-mono">
-                    {t.profit != null ? (
-                      <ProfitText value={t.profit} />
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {trades.map((t, i) => {
+                const isBuy = t.direction.toLowerCase() === "buy";
+                return (
+                  <tr key={`${t.symbol}-${t.time}-${i}`} className="border-b last:border-0">
+                    <td className="py-2 font-mono text-xs text-muted-foreground">
+                      {t.time.slice(0, 16).replace("T", " ")}
+                    </td>
+                    <td className="py-2">{t.symbol}</td>
+                    <td className="py-2 text-center">
+                      <Badge variant={isBuy ? "destructive" : "secondary"}>
+                        {isBuy ? "매수" : "매도"}
+                      </Badge>
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {formatNumber(t.quantity)}
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {formatNumber(t.price)}원
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {t.profit != null ? (
+                        <ProfitText value={t.profit} />
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

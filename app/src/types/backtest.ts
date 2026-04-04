@@ -79,13 +79,12 @@ export interface PerformanceMetrics {
 
 export interface TradeInfo {
   symbol: string;
-  direction: "BUY" | "SELL";
+  direction: string; // "Buy" | "Sell"
   quantity: number;
   price: number;
-  timestamp: string;
+  time: string;
   profit?: number;
-  profit_rate?: number;
-  commission?: number;
+  profit_percent?: number;
 }
 
 export interface BacktestResult {
