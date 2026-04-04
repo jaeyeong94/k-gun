@@ -8,13 +8,15 @@ WORKDIR /app
 COPY app/package.json app/pnpm-lock.yaml app/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# Build
+# Build with Docker service names
 COPY app/ .
+ENV STRATEGY_API_HOST=strategy-builder
+ENV BACKTEST_API_HOST=backtester
+ENV MCP_API_HOST=mcp-server
 RUN pnpm build
 
 # Production
 FROM node:22-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
