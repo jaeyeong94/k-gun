@@ -6,3 +6,8 @@
 AGENTS.md
 strategy_builder
 backtester
+
+# app
+app/node_modules/
+app/.next/
+app/.omc/
