@@ -224,6 +224,31 @@ function SummaryCards({
 
 // --- Trade Table ---
 
+// Buy→Sell 매칭으로 손익 계산
+function computeTradesWithPnl(trades: TradeInfo[]): (TradeInfo & { pnl?: number; pnlRate?: number })[] {
+  const result: (TradeInfo & { pnl?: number; pnlRate?: number })[] = [];
+  const openPositions: Map<string, { price: number; quantity: number }> = new Map();
+
+  for (const t of trades) {
+    const isBuy = t.direction.toLowerCase() === "buy";
+    if (isBuy) {
+      openPositions.set(t.symbol, { price: t.price, quantity: t.quantity });
+      result.push(t);
+    } else {
+      const entry = openPositions.get(t.symbol);
+      if (entry) {
+        const pnl = (t.price - entry.price) * t.quantity;
+        const pnlRate = ((t.price - entry.price) / entry.price) * 100;
+        result.push({ ...t, pnl, pnlRate });
+        openPositions.delete(t.symbol);
+      } else {
+        result.push(t);
+      }
+    }
+  }
+  return result;
+}
+
 function TradeTable({ trades }: { trades: TradeInfo[] }) {
   if (trades.length === 0) {
     return (
@@ -253,10 +278,11 @@ function TradeTable({ trades }: { trades: TradeInfo[] }) {
                 <th className="py-2 text-right font-medium whitespace-nowrap">수량</th>
                 <th className="py-2 text-right font-medium whitespace-nowrap">가격</th>
                 <th className="py-2 text-right font-medium whitespace-nowrap">손익</th>
+                <th className="py-2 text-right font-medium whitespace-nowrap">수익률</th>
               </tr>
             </thead>
             <tbody>
-              {trades.map((t, i) => {
+              {computeTradesWithPnl(trades).map((t, i) => {
                 const isBuy = t.direction.toLowerCase() === "buy";
                 return (
                   <tr key={`${t.symbol}-${t.time}-${i}`} className="border-b last:border-0">
@@ -276,8 +302,15 @@ function TradeTable({ trades }: { trades: TradeInfo[] }) {
                       {formatNumber(t.price)}원
                     </td>
                     <td className="py-2 text-right font-mono">
-                      {t.profit != null ? (
-                        <ProfitText value={t.profit} />
+                      {t.pnl != null ? (
+                        <ProfitText value={t.pnl} />
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {t.pnlRate != null ? (
+                        <ProfitText value={t.pnlRate} suffix="%" />
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
