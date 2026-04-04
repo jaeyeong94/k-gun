@@ -225,28 +225,76 @@ function SummaryCards({
 
 // --- Trade Table ---
 
-// Buy→Sell 매칭으로 손익 + 누적 NAV 계산
-function computeTradesWithPnl(trades: TradeInfo[], initialCapital: number): (TradeInfo & { pnl?: number; pnlRate?: number; nav: number })[] {
-  const result: (TradeInfo & { pnl?: number; pnlRate?: number; nav: number })[] = [];
-  const openPositions: Map<string, { price: number; quantity: number }> = new Map();
-  let nav = initialCapital;
+// Buy→Sell 매칭으로 손익 + 누적 NAV 계산 (다종목/추가매수 지원)
+interface PositionEntry {
+  price: number;
+  quantity: number;
+}
 
-  for (const t of trades) {
-    const isBuy = t.direction.toLowerCase() === "buy";
-    if (isBuy) {
-      openPositions.set(t.symbol, { price: t.price, quantity: t.quantity });
-      result.push({ ...t, nav });
-    } else {
-      const entry = openPositions.get(t.symbol);
-      if (entry) {
-        const pnl = (t.price - entry.price) * t.quantity;
-        const pnlRate = ((t.price - entry.price) / entry.price) * 100;
-        nav += pnl;
-        result.push({ ...t, pnl, pnlRate, nav });
-        openPositions.delete(t.symbol);
-      } else {
-        result.push({ ...t, nav });
+function computeTradesWithPnl(trades: TradeInfo[], initialCapital: number): (TradeInfo & { pnl?: number; pnlRate?: number; nav: number; cash: number })[] {
+  const result: (TradeInfo & { pnl?: number; pnlRate?: number; nav: number; cash: number })[] = [];
+  // 종목별 보유 목록 (추가매수 대응: 배열로 관리)
+  const openPositions: Map<string, PositionEntry[]> = new Map();
+  let cash = initialCapital;
+
+  function calcNav(currentTrades: TradeInfo[]): number {
+    // NAV = 현금 + 보유종목 평가금액
+    let totalEval = cash;
+    for (const [symbol, positions] of openPositions) {
+      // 최근 거래 가격을 현재가로 사용 (근사값)
+      const lastTrade = [...currentTrades].reverse().find(
+        (tr) => tr.symbol === symbol
+      );
+      const currentPrice = lastTrade?.price ?? positions[0]?.price ?? 0;
+      for (const pos of positions) {
+        totalEval += currentPrice * pos.quantity;
       }
+    }
+    return totalEval;
+  }
+
+  for (let i = 0; i < trades.length; i++) {
+    const t = trades[i];
+    const isBuy = t.direction.toLowerCase() === "buy";
+    const processedSoFar = trades.slice(0, i + 1);
+
+    if (isBuy) {
+      // 매수: 현금 감소, 포지션 추가
+      const cost = t.price * t.quantity;
+      cash -= cost;
+      const existing = openPositions.get(t.symbol) ?? [];
+      existing.push({ price: t.price, quantity: t.quantity });
+      openPositions.set(t.symbol, existing);
+      const nav = calcNav(processedSoFar);
+      result.push({ ...t, nav, cash });
+    } else {
+      // 매도: 보유 포지션에서 FIFO로 매칭
+      const positions = openPositions.get(t.symbol) ?? [];
+      let remainQty = t.quantity;
+      let totalPnl = 0;
+      let totalCost = 0;
+
+      while (remainQty > 0 && positions.length > 0) {
+        const pos = positions[0];
+        const matchQty = Math.min(remainQty, pos.quantity);
+        totalPnl += (t.price - pos.price) * matchQty;
+        totalCost += pos.price * matchQty;
+        remainQty -= matchQty;
+        pos.quantity -= matchQty;
+        if (pos.quantity <= 0) {
+          positions.shift();
+        }
+      }
+
+      if (positions.length === 0) {
+        openPositions.delete(t.symbol);
+      }
+
+      cash += t.price * t.quantity;
+      const avgEntryPrice = totalCost / (t.quantity - remainQty || 1);
+      const pnlRate = ((t.price - avgEntryPrice) / avgEntryPrice) * 100;
+      const nav = calcNav(processedSoFar);
+      result.push({ ...t, pnl: totalPnl, pnlRate, nav, cash });
     }
   }
   return result;
@@ -282,6 +330,7 @@ function TradeTable({ trades, initialCapital }: { trades: TradeInfo[]; initialCa
                 <th className="py-2 text-right font-medium whitespace-nowrap">가격</th>
                 <th className="py-2 text-right font-medium whitespace-nowrap">손익</th>
                 <th className="py-2 text-right font-medium whitespace-nowrap">수익률</th>
+                <th className="py-2 text-right font-medium whitespace-nowrap">현금</th>
                 <th className="py-2 text-right font-medium whitespace-nowrap">누적 NAV</th>
               </tr>
             </thead>
@@ -319,7 +368,10 @@ function TradeTable({ trades, initialCapital }: { trades: TradeInfo[]; initialCa
                         <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 text-right font-mono text-xs text-muted-foreground">
+                      {formatNumber(Math.round(t.cash))}원
+                    </td>
+                    <td className="py-2 text-right font-mono text-xs font-medium">
                       {formatNumber(Math.round(t.nav))}원
                     </td>
                   </tr>
