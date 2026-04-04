@@ -29,6 +29,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { BacktestStrategy as Strategy, TradeInfo } from "@/types/backtest";
+import { StockSearchInput } from "@/components/stock/stock-search-input";
 
 // --- Helpers ---
 
@@ -430,12 +431,11 @@ export default function BacktestPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="symbols">종목 코드 (쉼표 구분)</Label>
-              <Input
-                id="symbols"
-                placeholder="005930,000660,035420"
+              <Label>종목 검색</Label>
+              <StockSearchInput
                 value={store.symbols}
-                onChange={(e) => store.setSymbols(e.target.value)}
+                onChange={(codes) => store.setSymbols(codes)}
+                placeholder="종목명 또는 코드 검색"
               />
             </div>
 

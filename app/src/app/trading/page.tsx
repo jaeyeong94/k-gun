@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderDialog } from "@/components/trading/order-dialog";
+import { StockSearchInput } from "@/components/stock/stock-search-input";
 import type { Signal, SignalAction } from "@/types/signal";
 import {
   Zap,
@@ -148,16 +149,12 @@ function StrategyPanel() {
 
         {/* Stock codes input */}
         <div className="space-y-2">
-          <Label htmlFor="stock-codes">종목 코드</Label>
-          <Input
-            id="stock-codes"
+          <Label>종목 검색</Label>
+          <StockSearchInput
             value={stockCodes}
-            onChange={(e) => setStockCodes(e.target.value)}
-            placeholder="005930, 035720 ..."
+            onChange={(codes) => setStockCodes(codes)}
+            placeholder="종목명 또는 코드 검색"
           />
-          <p className="text-xs text-muted-foreground">
-            쉼표 또는 공백으로 구분
-          </p>
         </div>
 
         {/* Generate button */}
