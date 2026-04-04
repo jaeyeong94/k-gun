@@ -5,6 +5,8 @@ import { apiGet, apiPost } from "@/lib/api/client";
 import type { ApiResponse } from "@/types/account";
 import type { Strategy } from "@/types/strategy";
 import type {
+  Signal,
+  SignalAction,
   SignalExecuteRequest,
   SignalExecuteResponse,
 } from "@/types/signal";
@@ -23,8 +25,10 @@ export function useStrategies() {
 
   return useQuery({
     queryKey: ["strategies"],
-    queryFn: () =>
-      apiGet<ApiResponse<Strategy[]>>("/api/strategy/strategies"),
+    queryFn: async () => {
+      const res = await apiGet<{ strategies: Strategy[] }>("/api/strategy/strategies");
+      return { status: "success" as const, data: res.strategies ?? [] };
+    },
     enabled: authenticated,
     staleTime: 60_000,
   });
@@ -37,7 +41,7 @@ export function useSignalExecution() {
 
   return useMutation({
     mutationFn: (req: SignalExecuteRequest) =>
-      apiPost<ApiResponse<SignalExecuteResponse>>(
+      apiPost<{ status: string; results: Array<{ code: string; name: string; action: SignalAction; strength: number; reason: string; target_price?: number | null }>; logs: Array<{ type: string; message: string; timestamp: string }> }>(
         "/api/strategy/strategies/execute",
         req,
       ),
@@ -46,7 +50,14 @@ export function useSignalExecution() {
       addLog("신호 생성 시작...", "info");
     },
     onSuccess: (data) => {
-      const signals = data.data.signals;
+      const signals: Signal[] = (data.results ?? []).map((r) => ({
+        stock_code: r.code,
+        stock_name: r.name,
+        action: r.action,
+        strength: r.strength,
+        reason: r.reason,
+        price: r.target_price ?? undefined,
+      }));
       setSignals(signals);
       addLog(
         `신호 생성 완료: ${signals.length}개 종목 분석`,
