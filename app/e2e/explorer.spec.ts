@@ -17,8 +17,8 @@ test.describe("종목 탐색 페이지", () => {
     await expect(searchInput).toHaveValue("삼성");
 
     // 검색 결과 영역이 나타나는지 확인
-    const searchResults = page.locator("text=검색 결과");
-    await expect(searchResults).toBeVisible();
+    const searchResults = page.getByText("검색 결과", { exact: true });
+    await expect(searchResults).toBeVisible({ timeout: 5000 });
   });
 
   test("인기 종목 버튼이 클릭 가능해야 한다", async ({ page }) => {
