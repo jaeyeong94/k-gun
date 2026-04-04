@@ -494,7 +494,7 @@ export default function StrategyPage() {
 
       {/* Strategy Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={() => setSelectedId(null)}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent className="overflow-y-auto sm:max-w-lg px-6">
           {selected && (
             <StrategyDetailSheet strategy={selected} />
           )}
