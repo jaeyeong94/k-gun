@@ -22,6 +22,15 @@ interface StockSearchInputProps {
   multiple?: boolean;
 }
 
+// 코드 → 이름 매핑 캐시 (검색 결과에서 선택한 종목)
+const stockNameCache: Map<string, string> = new Map(
+  POPULAR_STOCKS.map((s) => [s.code, s.name]),
+);
+
+export function getStockName(code: string): string | undefined {
+  return stockNameCache.get(code);
+}
+
 export function StockSearchInput({
   value,
   onChange,
@@ -51,7 +60,8 @@ export function StockSearchInput({
   }, []);
 
   const addStock = useCallback(
-    (code: string) => {
+    (code: string, name?: string) => {
+      if (name) stockNameCache.set(code, name);
       if (multiple) {
         const codes = new Set(selectedCodes);
         codes.add(code);
@@ -79,19 +89,19 @@ export function StockSearchInput({
       {selectedCodes.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selectedCodes.map((code) => {
-            const stock = POPULAR_STOCKS.find((s) => s.code === code);
+            const name = stockNameCache.get(code);
             return (
               <Badge
                 key={code}
                 variant="secondary"
                 className="gap-1 pl-2 pr-1 py-0.5"
               >
-                <span className="font-mono text-xs">{code}</span>
-                {stock && (
-                  <span className="text-xs text-muted-foreground">
-                    {stock.name}
+                {name && (
+                  <span className="text-xs">
+                    {name}
                   </span>
                 )}
+                <span className="font-mono text-xs text-muted-foreground">{code}</span>
                 <button
                   type="button"
                   onClick={() => removeStock(code)}
@@ -161,7 +171,7 @@ export function StockSearchInput({
                   <button
                     key={r.code}
                     type="button"
-                    onClick={() => addStock(r.code)}
+                    onClick={() => addStock(r.code, r.name)}
                     disabled={selectedCodes.includes(r.code)}
                     className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-40"
                   >

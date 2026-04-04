@@ -29,7 +29,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { BacktestStrategy as Strategy, TradeInfo } from "@/types/backtest";
-import { StockSearchInput } from "@/components/stock/stock-search-input";
+import { StockSearchInput, getStockName } from "@/components/stock/stock-search-input";
 
 // --- Helpers ---
 
@@ -342,7 +342,16 @@ function TradeTable({ trades, initialCapital }: { trades: TradeInfo[]; initialCa
                     <td className="py-2 font-mono text-xs text-muted-foreground">
                       {t.time.slice(0, 16).replace("T", " ")}
                     </td>
-                    <td className="py-2">{t.symbol}</td>
+                    <td className="py-2">
+                      {getStockName(t.symbol) ? (
+                        <div>
+                          <span className="font-medium">{getStockName(t.symbol)}</span>
+                          <span className="text-xs text-muted-foreground ml-1">({t.symbol})</span>
+                        </div>
+                      ) : (
+                        <span className="font-mono">{t.symbol}</span>
+                      )}
+                    </td>
                     <td className="py-2 text-center">
                       <Badge variant={isBuy ? "destructive" : "secondary"}>
                         {isBuy ? "매수" : "매도"}
