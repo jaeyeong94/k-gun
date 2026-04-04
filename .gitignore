@@ -11,3 +11,9 @@ backtester
 app/node_modules/
 app/.next/
 app/.omc/
+
+# data
+data/
+*.db
+*.db-wal
+*.db-shm
