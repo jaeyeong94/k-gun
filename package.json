@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "concurrently -n app,p1,p2,mcp -c blue,green,yellow,magenta \"pnpm dev:app\" \"pnpm dev:strategy\" \"pnpm dev:backtester\" \"pnpm dev:mcp\"",
     "dev:app": "cd app && pnpm dev -p 3333",
-    "dev:strategy": "cd external/open-trading-api/strategy_builder && bash start.sh",
-    "dev:backtester": "cd external/open-trading-api/backtester && bash start.sh",
+    "dev:strategy": "cd external/open-trading-api/strategy_builder && uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:backtester": "cd external/open-trading-api/backtester && uv run uvicorn backend.main:app --host 0.0.0.0 --port 8002 --reload",
     "dev:mcp": "cd external/open-trading-api/backtester && bash scripts/start_mcp.sh",
     "dev:backend": "concurrently -n p1,p2,mcp -c green,yellow,magenta \"pnpm dev:strategy\" \"pnpm dev:backtester\" \"pnpm dev:mcp\"",
     "dev:frontend": "pnpm dev:app",
+    "dev:full": "concurrently -n app,p1,p2,mcp -c blue,green,yellow,magenta \"pnpm dev:app\" \"cd external/open-trading-api/strategy_builder && bash start.sh\" \"cd external/open-trading-api/backtester && bash start.sh\" \"pnpm dev:mcp\"",
     "build": "cd app && pnpm build",
     "stop": "lsof -ti :3333,:8000,:8002,:3846 | xargs kill 2>/dev/null; echo 'All servers stopped'"
   },
