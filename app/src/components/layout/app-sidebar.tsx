@@ -74,13 +74,15 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-4 py-3">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            K
-          </div>
+      <SidebarHeader className="border-b px-4 py-4">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <img
+            src="/kgun-logo.svg"
+            alt="K-Gun"
+            className="h-10 w-10"
+          />
           <div>
-            <div className="font-semibold text-sm">K-Gun</div>
+            <div className="font-bold text-base">K-Gun</div>
             <div className="text-[10px] text-muted-foreground">
               Trading Control Panel
             </div>
