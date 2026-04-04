@@ -179,7 +179,7 @@ export default function DashboardPage() {
             <CardContent>
               {marketIndex.isLoading ? (
                 <Skeleton className="h-8 w-24" />
-              ) : data ? (
+              ) : data && typeof data.value === "number" ? (
                 <>
                   <div className="text-2xl font-bold font-mono">
                     {data.value.toLocaleString("ko-KR", {
@@ -187,9 +187,9 @@ export default function DashboardPage() {
                     })}
                   </div>
                   <p className="text-sm">
-                    <ProfitText value={data.change} suffix="" />{" "}
+                    <ProfitText value={data.change ?? 0} suffix="" />{" "}
                     <span className="text-muted-foreground">
-                      (<ProfitText value={data.change_rate} suffix="%" />)
+                      (<ProfitText value={data.change_rate ?? 0} suffix="%" />)
                     </span>
                   </p>
                 </>

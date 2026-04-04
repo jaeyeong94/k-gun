@@ -118,7 +118,7 @@ function SearchResults({
 }
 
 // ─── Price Card ──────────────────────────────────────────────
-function PriceCard({ code }: { code: string }) {
+function PriceCard({ code, name }: { code: string; name: string }) {
   const { data: price, isLoading } = useStockPrice(code);
 
   if (isLoading) {
@@ -162,9 +162,9 @@ function PriceCard({ code }: { code: string }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="size-4" />
-          {price.stock_name}
+          {name}
           <span className="text-sm font-normal text-muted-foreground">
-            {price.stock_code}
+            {code}
           </span>
         </CardTitle>
         <CardDescription>실시간 시세 (5초 갱신)</CardDescription>
@@ -172,7 +172,7 @@ function PriceCard({ code }: { code: string }) {
       <CardContent>
         <div className="flex items-end gap-4">
           <span className={`text-3xl font-bold font-mono ${priceColor(price.change)}`}>
-            {formatNumber(price.current_price)}
+            {formatNumber(price.price)}
             <span className="text-base font-normal">원</span>
           </span>
           <div className={`flex items-center gap-1.5 pb-1 ${priceColor(price.change)}`}>
@@ -316,12 +316,12 @@ function OrderbookCard({ code }: { code: string }) {
 }
 
 // ─── Stock Detail Section ────────────────────────────────────
-function StockDetail({ code }: { code: string }) {
+function StockDetail({ code, name }: { code: string; name: string }) {
   return (
     <div className="space-y-4">
       <Separator />
       <div className="grid gap-4 md:grid-cols-2">
-        <PriceCard code={code} />
+        <PriceCard code={code} name={name} />
         <OrderbookCard code={code} />
       </div>
       <div className="flex justify-end">
@@ -339,15 +339,18 @@ function StockDetail({ code }: { code: string }) {
 export default function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [selectedName, setSelectedName] = useState<string>("");
 
   const { data: results, isLoading, isFetching } = useSymbolSearch(query);
 
   const handleSelect = useCallback((result: SymbolSearchResult) => {
     setSelectedCode(result.code);
+    setSelectedName(result.name);
   }, []);
 
-  const handlePopularClick = useCallback((code: string) => {
+  const handlePopularClick = useCallback((code: string, name: string) => {
     setSelectedCode(code);
+    setSelectedName(name);
     setQuery("");
   }, []);
 
@@ -383,7 +386,7 @@ export default function ExplorerPage() {
               key={stock.code}
               variant={selectedCode === stock.code ? "default" : "outline"}
               size="sm"
-              onClick={() => handlePopularClick(stock.code)}
+              onClick={() => handlePopularClick(stock.code, stock.name)}
             >
               {stock.name}
               <span className="text-xs opacity-60">{stock.code}</span>
@@ -417,7 +420,7 @@ export default function ExplorerPage() {
       )}
 
       {/* Stock detail */}
-      {selectedCode && <StockDetail code={selectedCode} />}
+      {selectedCode && <StockDetail code={selectedCode} name={selectedName} />}
     </div>
   );
 }
