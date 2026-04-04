@@ -40,19 +40,19 @@ export function EquityChart({
     return null;
   }
 
-  // Normalize both curves to start at 100 for fair comparison
-  const firstEquity = equityCurve[dates[0]];
-  const hasBenchmark = !!benchmarkCurve;
-  const benchDates = hasBenchmark ? Object.keys(benchmarkCurve).sort() : [];
-  const firstBenchmark = hasBenchmark && benchDates.length > 0 ? benchmarkCurve[benchDates[0]] : 1;
+  // Normalize equity to start at 100
+  const firstEquity = equityCurve[dates[0]] || 1;
+  const hasBenchmark = !!benchmarkCurve && Object.keys(benchmarkCurve).length > 0;
 
   const data: NormalizedDataPoint[] = dates.map((date) => {
     const point: NormalizedDataPoint = {
       date,
       equity: (equityCurve[date] / firstEquity) * 100,
     };
-    if (hasBenchmark && date in benchmarkCurve) {
-      point.benchmark = (benchmarkCurve[date] / firstBenchmark) * 100;
+    if (hasBenchmark && date in benchmarkCurve!) {
+      // benchmark_curve는 % 단위 (0에서 시작, 2.7 = +2.7%)
+      // 100 기준으로 변환: 0% → 100, 2.7% → 102.7
+      point.benchmark = 100 + benchmarkCurve![date];
     }
     return point;
   });

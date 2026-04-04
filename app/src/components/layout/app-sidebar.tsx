@@ -165,6 +165,9 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <p className="px-3 pb-3 text-[9px] leading-tight text-muted-foreground/50">
+          본 프로그램은 투자 판단 보조 도구이며, 투자자문을 제공하지 않습니다. 모든 투자 판단과 책임은 사용자에게 있습니다.
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
