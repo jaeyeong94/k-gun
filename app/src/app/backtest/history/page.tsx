@@ -398,7 +398,11 @@ export default function BacktestHistoryPage() {
             {history
               ? `${history.length}개의 저장된 결과`
               : "로딩 중..."}
-            {selectedIds.size > 0 && ` | ${selectedIds.size}개 선택됨`}
+            {selectedIds.size > 0
+              ? ` | ${selectedIds.size}개 선택됨`
+              : history && history.length >= 2
+                ? " | 체크박스로 2개 이상 선택하면 전략을 비교할 수 있습니다"
+                : ""}
           </CardDescription>
         </CardHeader>
         <CardContent>
