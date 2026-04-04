@@ -1,20 +1,24 @@
 export type OrderAction = "BUY" | "SELL";
 export type OrderType = "market" | "limit";
 
-export interface OrderRequest {
+export interface OrderExecuteRequest {
   stock_code: string;
   stock_name: string;
   action: OrderAction;
   order_type: OrderType;
-  price?: number;
+  price: number;
   quantity: number;
-  signal_reason?: string;
 }
 
-export interface OrderResult {
-  status: "success" | "error";
-  order_id?: string;
-  message: string;
+export interface OrderExecuteResponse {
+  order_id: string;
+  stock_code: string;
+  stock_name: string;
+  action: OrderAction;
+  quantity: number;
+  price: number;
+  status: string;
+  message?: string;
 }
 
 export interface PendingOrder {
@@ -27,5 +31,11 @@ export interface PendingOrder {
   quantity: number;
   filled_quantity: number;
   status: string;
-  time: string;
+  ordered_at: string;
+}
+
+export interface BuyableResponse {
+  stock_code: string;
+  buyable_quantity: number;
+  price: number;
 }

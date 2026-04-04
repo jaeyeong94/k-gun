@@ -1,29 +1,22 @@
-export type SignalAction = "BUY" | "SELL" | "HOLD" | "ERROR";
+export type SignalAction = "BUY" | "SELL" | "HOLD";
 
-export interface SignalResult {
-  code: string;
-  name: string;
+export interface Signal {
+  stock_code: string;
+  stock_name: string;
   action: SignalAction;
-  strength: number;
+  strength: number; // 0~1
   reason: string;
-  target_price?: number;
+  price?: number;
 }
 
-export interface LogEntry {
-  type: "info" | "success" | "error" | "warning";
-  message: string;
-  timestamp?: string;
-}
-
-export interface ExecuteRequest {
+export interface SignalExecuteRequest {
   strategy_id: string;
   stocks: string[];
-  params: Record<string, number>;
+  params?: Record<string, unknown>;
 }
 
-export interface ExecuteResponse {
-  status: "success" | "error";
-  results: SignalResult[];
-  logs: LogEntry[];
-  message?: string;
+export interface SignalExecuteResponse {
+  signals: Signal[];
+  strategy_id: string;
+  executed_at: string;
 }

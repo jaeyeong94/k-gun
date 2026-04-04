@@ -1,21 +1,19 @@
-export interface Symbol {
-  code: string;
-  name: string;
-  exchange: "kospi" | "kosdaq";
-  exchange_name: string;
+export interface PriceInfo {
+  stock_code: string;
+  stock_name: string;
+  current_price: number;
+  change: number;
+  change_rate: number;
+  volume: number;
 }
 
-export interface SymbolSearchResponse {
-  query: string;
-  total: number;
-  items: Symbol[];
+export interface OrderbookEntry {
+  price: number;
+  quantity: number;
 }
 
-export interface MasterStatus {
-  kospi_count: number;
-  kosdaq_count: number;
-  total_count: number;
-  kospi_updated: string | null;
-  kosdaq_updated: string | null;
-  needs_update: boolean;
+export interface Orderbook {
+  stock_code: string;
+  asks: OrderbookEntry[];
+  bids: OrderbookEntry[];
 }
