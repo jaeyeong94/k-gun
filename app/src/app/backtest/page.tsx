@@ -605,7 +605,7 @@ export default function BacktestPage() {
                       value={val}
                       min={p.min ?? 0}
                       max={p.max ?? 100}
-                      step={p.step ?? (p.type === "int" ? 1 : 0.1)}
+                      step={p.step ?? (p.type === "int" ? 1 : 0.01)}
                       description={name}
                       onChange={(v) => store.setParamOverride(name, v)}
                     />
