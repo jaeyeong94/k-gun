@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { strategyPerformance } from "@/lib/db/schema";
-import { eq, and, gte, lte, asc } from "drizzle-orm";
+import { eq, and, gte, lte, asc, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
     const inserted = db
       .select()
       .from(strategyPerformance)
-      .orderBy(asc(strategyPerformance.id))
-      .all()
-      .pop();
+      .orderBy(desc(strategyPerformance.id))
+      .limit(1)
+      .get();
 
     return NextResponse.json(inserted, { status: 201 });
   } catch {

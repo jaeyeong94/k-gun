@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { marketEvents } from "@/lib/db/schema";
-import { eq, like, and, asc } from "drizzle-orm";
+import { eq, like, and, asc, desc } from "drizzle-orm";
 import type { EventType } from "@/types/calendar";
 
 export async function GET(request: Request) {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const month = searchParams.get("month"); // YYYY-MM
     const type = searchParams.get("type") as EventType | null;
 
-    let query = db.select().from(marketEvents);
+    const query = db.select().from(marketEvents);
 
     const conditions = [];
     if (month) {
@@ -88,9 +88,9 @@ export async function POST(request: Request) {
     const inserted = db
       .select()
       .from(marketEvents)
-      .orderBy(asc(marketEvents.id))
-      .all()
-      .pop();
+      .orderBy(desc(marketEvents.id))
+      .limit(1)
+      .get();
 
     const event = inserted
       ? {
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         }
       : null;
 
-    return Response.json({ event }, { status: 201 });
+    return Response.json({ data: event }, { status: 201 });
   } catch (error) {
     const msg =
       error instanceof Error ? error.message : "이벤트 추가 실패";

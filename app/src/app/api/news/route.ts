@@ -77,8 +77,8 @@ export async function POST(request: Request) {
       .select()
       .from(newsCache)
       .orderBy(desc(newsCache.id))
-      .all()
-      .at(0);
+      .limit(1)
+      .get();
 
     const newsItem = inserted
       ? {
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         }
       : null;
 
-    return Response.json({ news: newsItem }, { status: 201 });
+    return Response.json({ data: newsItem }, { status: 201 });
   } catch (error) {
     const msg =
       error instanceof Error ? error.message : "뉴스 추가 실패";
