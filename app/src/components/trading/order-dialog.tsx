@@ -47,7 +47,7 @@ export function OrderDialog({ signal, open, onOpenChange }: OrderDialogProps) {
   );
   const orderMutation = useOrderExecution();
 
-  const currentPrice = priceQuery.data?.data?.current_price ?? signal?.price ?? 0;
+  const currentPrice = priceQuery.data?.data?.price ?? signal?.price ?? 0;
   const buyableQty = buyableQuery.data?.data?.buyable_quantity ?? 0;
   const estimatedAmount = quantity * currentPrice;
 

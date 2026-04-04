@@ -10,6 +10,13 @@ import {
   PieChart,
   Search,
   MessageSquare,
+  Star,
+  BookOpen,
+  Shield,
+  LineChart,
+  Calculator,
+  CalendarDays,
+  Newspaper,
   Settings,
 } from "lucide-react";
 import {
@@ -33,6 +40,13 @@ const navItems = [
   { title: "포트폴리오", href: "/portfolio", icon: PieChart },
   { title: "AI 챗봇", href: "/chat", icon: MessageSquare },
   { title: "종목 탐색", href: "/explorer", icon: Search },
+  { title: "워치리스트", href: "/watchlist", icon: Star },
+  { title: "매매 저널", href: "/journal", icon: BookOpen },
+  { title: "리스크", href: "/risk", icon: Shield },
+  { title: "성과 추적", href: "/performance", icon: LineChart },
+  { title: "도구", href: "/tools", icon: Calculator },
+  { title: "시장 캘린더", href: "/calendar", icon: CalendarDays },
+  { title: "뉴스", href: "/news", icon: Newspaper },
 ];
 
 export function AppSidebar() {
