@@ -22,7 +22,10 @@ import {
   RefreshCw,
   LogOut,
   Settings,
+  Bell,
+  BellOff,
 } from "lucide-react";
+import { useNotificationStore } from "@/stores/notifications";
 
 // ---------------------------------------------------------------------------
 // Theme selector options
@@ -55,6 +58,108 @@ interface MasterFileInfo {
   lastUpdated: string | null;
   isLoading: boolean;
   isCollecting: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Notification settings card
+// ---------------------------------------------------------------------------
+function NotificationSettingsCard() {
+  const { enabled, requestPermission, clearNotifications, notifications } =
+    useNotificationStore();
+
+  const [permissionStatus, setPermissionStatus] = useState<
+    "granted" | "denied" | "default" | "unsupported"
+  >("default");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPermissionStatus("unsupported");
+    } else {
+      setPermissionStatus(
+        Notification.permission as "granted" | "denied" | "default",
+      );
+    }
+  }, [enabled]);
+
+  const handleRequestPermission = async () => {
+    await requestPermission();
+    if ("Notification" in window) {
+      setPermissionStatus(
+        Notification.permission as "granted" | "denied" | "default",
+      );
+    }
+  };
+
+  const statusText: Record<string, string> = {
+    granted: "허용됨",
+    denied: "거부됨",
+    default: "미설정",
+    unsupported: "미지원",
+  };
+
+  const statusVariant: Record<string, "secondary" | "destructive" | "outline"> =
+    {
+      granted: "secondary",
+      denied: "destructive",
+      default: "outline",
+      unsupported: "outline",
+    };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>알림</CardTitle>
+        <CardDescription>브라우저 푸시 알림 설정</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">알림 권한:</span>
+            <Badge variant={statusVariant[permissionStatus]}>
+              {statusText[permissionStatus]}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            {enabled ? (
+              <Bell className="size-4 text-green-500" />
+            ) : (
+              <BellOff className="size-4 text-muted-foreground" />
+            )}
+            <span className="text-sm">
+              {enabled ? "활성화" : "비활성화"}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          {permissionStatus !== "granted" && permissionStatus !== "unsupported" && (
+            <Button
+              variant="outline"
+              onClick={handleRequestPermission}
+              disabled={permissionStatus === "denied"}
+            >
+              <Bell className="mr-2 size-4" />
+              {permissionStatus === "denied"
+                ? "브라우저 설정에서 허용 필요"
+                : "권한 요청"}
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button variant="outline" onClick={clearNotifications}>
+              알림 기록 삭제 ({notifications.length})
+            </Button>
+          )}
+        </div>
+
+        {permissionStatus === "denied" && (
+          <p className="text-xs text-muted-foreground">
+            알림 권한이 거부되었습니다. 브라우저 주소창의 자물쇠 아이콘을 클릭하여
+            알림을 허용해주세요.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +352,9 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── 알림 섹션 ── */}
+      <NotificationSettingsCard />
 
       {/* ── 서버 상태 섹션 ── */}
       <Card>

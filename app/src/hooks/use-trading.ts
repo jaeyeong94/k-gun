@@ -19,6 +19,7 @@ import type {
 import type { PriceInfo } from "@/types/symbol";
 import { useAuthStore } from "@/stores/auth";
 import { useTradingStore } from "@/stores/trading";
+import { useNotificationStore } from "@/stores/notifications";
 
 export function useStrategies() {
   const authenticated = useAuthStore((s) => s.authenticated);
@@ -38,6 +39,7 @@ export function useSignalExecution() {
   const addLog = useTradingStore((s) => s.addLog);
   const setSignals = useTradingStore((s) => s.setSignals);
   const setIsGenerating = useTradingStore((s) => s.setIsGenerating);
+  const sendNotification = useNotificationStore((s) => s.sendNotification);
 
   return useMutation({
     mutationFn: (req: SignalExecuteRequest) =>
@@ -68,6 +70,13 @@ export function useSignalExecution() {
           `${s.stock_name}(${s.stock_code}): ${s.action} (강도 ${(s.strength * 100).toFixed(0)}%)`,
           s.action === "HOLD" ? "info" : "success",
         );
+        if (s.action !== "HOLD") {
+          sendNotification(
+            `${s.stock_name}: ${s.action} 신호`,
+            `${s.stock_name}: ${s.action} 신호 (강도 ${(s.strength * 100).toFixed(0)}%)`,
+            { type: "signal" },
+          );
+        }
       }
     },
     onError: (error) => {
@@ -109,6 +118,7 @@ export function useBuyableQuantity(stockCode: string | null) {
 export function useOrderExecution() {
   const queryClient = useQueryClient();
   const addLog = useTradingStore((s) => s.addLog);
+  const sendOrderNotification = useNotificationStore((s) => s.sendNotification);
 
   return useMutation({
     mutationFn: (req: OrderExecuteRequest) =>
@@ -121,6 +131,11 @@ export function useOrderExecution() {
       addLog(
         `주문 체결: ${order.stock_name} ${order.action === "BUY" ? "매수" : "매도"} ${order.quantity}주 @ ${order.price.toLocaleString("ko-KR")}원`,
         "success",
+      );
+      sendOrderNotification(
+        `${order.stock_name} ${order.quantity}주 ${order.action === "BUY" ? "매수" : "매도"} 체결`,
+        `${order.stock_name} ${order.quantity}주 ${order.action === "BUY" ? "매수" : "매도"} @ ${order.price.toLocaleString("ko-KR")}원`,
+        { type: "order" },
       );
       queryClient.invalidateQueries({ queryKey: ["holdings"] });
       queryClient.invalidateQueries({ queryKey: ["balance"] });

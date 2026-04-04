@@ -5,9 +5,9 @@ import Link from "next/link";
 import {
   useSymbolSearch,
   useStockPrice,
-  useOrderbook,
   type SymbolSearchResult,
 } from "@/hooks/use-explorer";
+import { RealtimeOrderbook } from "@/components/explorer/realtime-orderbook";
 import {
   Card,
   CardContent,
@@ -25,7 +25,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  BookOpen,
   Activity,
   ArrowRight,
 } from "lucide-react";
@@ -196,125 +195,6 @@ function PriceCard({ code, name }: { code: string; name: string }) {
   );
 }
 
-// ─── Orderbook Table ─────────────────────────────────────────
-function OrderbookCard({ code }: { code: string }) {
-  const { data: orderbook, isLoading } = useOrderbook(code);
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="size-4" />
-            호가
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-7 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!orderbook) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="size-4" />
-            호가
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            호가 정보를 불러올 수 없습니다
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const asks = orderbook.asks.slice(0, 5).reverse();
-  const bids = orderbook.bids.slice(0, 5);
-
-  const maxQty = Math.max(
-    ...asks.map((e) => e.quantity),
-    ...bids.map((e) => e.quantity),
-    1,
-  );
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BookOpen className="size-4" />
-          호가
-        </CardTitle>
-        <CardDescription>매도 5호가 / 매수 5호가</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-0.5">
-          {/* Column headers */}
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-2 px-2 pb-1 text-xs text-muted-foreground">
-            <span>잔량</span>
-            <span className="text-center">가격</span>
-            <span className="text-right">잔량</span>
-          </div>
-
-          {/* Asks (매도) - blue */}
-          {asks.map((entry, i) => (
-            <div
-              key={`ask-${i}`}
-              className="group relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded px-2 py-1"
-            >
-              <div className="relative flex justify-start">
-                <div
-                  className="absolute right-0 top-0 h-full rounded bg-blue-500/10"
-                  style={{ width: `${(entry.quantity / maxQty) * 100}%` }}
-                />
-                <span className="relative z-10 font-mono text-xs text-blue-500">
-                  {formatNumber(entry.quantity)}
-                </span>
-              </div>
-              <span className="text-center font-mono text-sm font-medium text-blue-500">
-                {formatNumber(entry.price)}
-              </span>
-              <span />
-            </div>
-          ))}
-
-          {/* Divider */}
-          <Separator className="my-1" />
-
-          {/* Bids (매수) - red */}
-          {bids.map((entry, i) => (
-            <div
-              key={`bid-${i}`}
-              className="group relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded px-2 py-1"
-            >
-              <span />
-              <span className="text-center font-mono text-sm font-medium text-red-500">
-                {formatNumber(entry.price)}
-              </span>
-              <div className="relative flex justify-end">
-                <div
-                  className="absolute left-0 top-0 h-full rounded bg-red-500/10"
-                  style={{ width: `${(entry.quantity / maxQty) * 100}%` }}
-                />
-                <span className="relative z-10 font-mono text-xs text-red-500">
-                  {formatNumber(entry.quantity)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 // ─── Stock Detail Section ────────────────────────────────────
 function StockDetail({ code, name }: { code: string; name: string }) {
   return (
@@ -322,7 +202,7 @@ function StockDetail({ code, name }: { code: string; name: string }) {
       <Separator />
       <div className="grid gap-4 md:grid-cols-2">
         <PriceCard code={code} name={name} />
-        <OrderbookCard code={code} />
+        <RealtimeOrderbook code={code} />
       </div>
       <div className="flex justify-end">
         <Button nativeButton={false} render={<Link href={`/trading?code=${code}`} />}>

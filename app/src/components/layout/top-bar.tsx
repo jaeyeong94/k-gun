@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 export function TopBar() {
   const { authenticated, mode, modeDisplay } = useAuthStore();
@@ -16,6 +17,7 @@ export function TopBar() {
 
       <div className="flex-1" />
 
+      <NotificationBell />
       <ThemeToggle />
 
       {authenticated ? (
