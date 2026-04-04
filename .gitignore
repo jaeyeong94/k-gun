@@ -7,6 +7,10 @@ AGENTS.md
 strategy_builder
 backtester
 
+# root
+node_modules/
+pnpm-lock.yaml
+
 # app
 app/node_modules/
 app/.next/

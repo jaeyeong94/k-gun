@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  strategy-builder:
+    build:
+      context: ./external/open-trading-api/strategy_builder
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/KIS/config:/root/KIS/config:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/auth/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backtester:
+    build:
+      context: ./external/open-trading-api/backtester
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - ~/KIS/config:/root/KIS/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/auth/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp-server:
+    build:
+      context: ./external/open-trading-api/backtester
+      dockerfile: Dockerfile
+    command: uv run python -m kis_mcp.server
+    ports:
+      - "3846:3846"
+    volumes:
+      - ~/KIS/config:/root/KIS/config:ro
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3846
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3846/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "3333:3333"
+    environment:
+      - NEXT_PUBLIC_STRATEGY_API_URL=http://strategy-builder:8000
+      - NEXT_PUBLIC_BACKTEST_API_URL=http://backtester:8002
+      - NEXT_PUBLIC_MCP_URL=http://mcp-server:3846
+    depends_on:
+      strategy-builder:
+        condition: service_healthy
+      backtester:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+    restart: unless-stopped
