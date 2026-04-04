@@ -55,3 +55,7 @@ export function apiPost<T>(
     useQueue,
   );
 }
+
+export function apiDelete<T>(url: string, useQueue = true): Promise<T> {
+  return request<T>(url, { method: "DELETE" }, useQueue);
+}

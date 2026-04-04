@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useBacktestStore } from "@/stores/backtest";
 import { useStrategies, useRunBacktest } from "@/hooks/use-backtest";
 import { EquityChart } from "@/components/backtest/equity-chart";
@@ -27,9 +27,15 @@ import {
   Activity,
   Target,
   Loader2,
+  ClipboardCopy,
+  Check,
 } from "lucide-react";
 import type { BacktestStrategy as Strategy, TradeInfo } from "@/types/backtest";
 import { StockSearchInput, getStockName } from "@/components/stock/stock-search-input";
+import { useSaveBacktestResult } from "@/hooks/use-backtest-history";
+import { subMonths, subYears, format } from "date-fns";
+import { toast } from "sonner";
+import Link from "next/link";
 
 // --- Helpers ---
 
@@ -433,6 +439,55 @@ export default function BacktestPage() {
     });
   }, [store, mutation]);
 
+  const saveMutation = useSaveBacktestResult();
+  const [savedCacheKey, setSavedCacheKey] = useState<string | null>(null);
+
+  const handleSave = useCallback(() => {
+    if (!store.result || !store.strategyId) return;
+    saveMutation.mutate(
+      {
+        strategyId: store.strategyId,
+        symbols: store.symbols,
+        startDate: store.startDate,
+        endDate: store.endDate,
+        params: JSON.stringify(store.paramOverrides),
+        result: JSON.stringify(store.result),
+      },
+      {
+        onSuccess: (data: { cacheKey?: string; alreadyExists?: boolean }) => {
+          setSavedCacheKey(data.cacheKey ?? "saved");
+          if (data.alreadyExists) {
+            toast.info("이미 저장된 결과입니다");
+          } else {
+            toast.success("백테스트 결과가 저장되었습니다");
+          }
+        },
+        onError: () => {
+          toast.error("결과 저장에 실패했습니다");
+        },
+      },
+    );
+  }, [store, saveMutation]);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyResult = useCallback(async () => {
+    if (!store.result) return;
+    const m = store.result.metrics;
+    const strategyName = selectedStrategy?.name ?? store.strategyId;
+    const symbols = store.symbols;
+    const totalReturn = m.basic?.total_return?.toFixed(2) ?? "-";
+    const sharpe = m.risk?.sharpe_ratio?.toFixed(2) ?? "-";
+    const mdd = m.basic?.max_drawdown?.toFixed(2) ?? "-";
+    const winRate = m.trading?.win_rate != null
+      ? `${Math.round(m.trading.win_rate)}%`
+      : "-";
+    const text = `전략: ${strategyName} | 종목: ${symbols} | 총수익률: ${totalReturn}% | 샤프: ${sharpe} | MDD: ${mdd}% | 승률: ${winRate}`;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [store.result, store.strategyId, store.symbols, selectedStrategy?.name]);
+
   const canRun =
     store.strategyId &&
     store.symbols.trim() &&
@@ -444,7 +499,12 @@ export default function BacktestPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">백테스트</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">백테스트</h1>
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/backtest/history" />}>
+            실행 이력
+          </Button>
+        </div>
         <Button onClick={handleRun} disabled={!canRun} className="w-full sm:w-auto min-h-[44px]">
           {store.isRunning ? (
             <>
@@ -498,6 +558,34 @@ export default function BacktestPage() {
                 onChange={(codes) => store.setSymbols(codes)}
                 placeholder="종목명 또는 코드 검색"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>기간 프리셋</Label>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { label: "최근 3개월", months: 3 },
+                  { label: "최근 6개월", months: 6 },
+                  { label: "최근 1년", months: 12 },
+                  { label: "최근 3년", months: 36 },
+                ] as const).map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const end = new Date();
+                      const start = preset.months <= 12
+                        ? subMonths(end, preset.months)
+                        : subYears(end, preset.months / 12);
+                      store.setStartDate(format(start, "yyyy-MM-dd"));
+                      store.setEndDate(format(end, "yyyy-MM-dd"));
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -662,11 +750,52 @@ export default function BacktestPage() {
 
           {/* Tabs for details */}
           <Tabs defaultValue="chart">
-            <TabsList>
-              <TabsTrigger value="chart">자산 곡선</TabsTrigger>
-              <TabsTrigger value="metrics">성과 지표</TabsTrigger>
-              <TabsTrigger value="trades">거래 내역</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-2">
+              <TabsList>
+                <TabsTrigger value="chart">자산 곡선</TabsTrigger>
+                <TabsTrigger value="metrics">성과 지표</TabsTrigger>
+                <TabsTrigger value="trades">거래 내역</TabsTrigger>
+              </TabsList>
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  variant={savedCacheKey ? "outline" : "default"}
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saveMutation.isPending || !!savedCacheKey}
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                      저장 중...
+                    </>
+                  ) : savedCacheKey ? (
+                    <>
+                      <Check className="mr-1.5 size-3.5" />
+                      저장 완료
+                    </>
+                  ) : (
+                    "결과 저장"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyResult}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="mr-1.5 size-3.5" />
+                      복사됨
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCopy className="mr-1.5 size-3.5" />
+                      결과 복사
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
             <TabsContent value="chart">
               <EquityChart
                 equityCurve={store.result.equity_curve}

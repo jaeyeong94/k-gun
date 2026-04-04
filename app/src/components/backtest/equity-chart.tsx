@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  AreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -22,20 +23,10 @@ interface EquityChartProps {
   initialCapital: number;
 }
 
-interface DataPoint {
+interface NormalizedDataPoint {
   date: string;
   equity: number;
   benchmark?: number;
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1_0000_0000) {
-    return `${(value / 1_0000_0000).toFixed(1)}억`;
-  }
-  if (value >= 1_0000) {
-    return `${(value / 1_0000).toFixed(0)}만`;
-  }
-  return value.toLocaleString("ko-KR");
 }
 
 export function EquityChart({
@@ -44,29 +35,36 @@ export function EquityChart({
   initialCapital,
 }: EquityChartProps) {
   const dates = Object.keys(equityCurve).sort();
-  const data: DataPoint[] = dates.map((date) => {
-    const point: DataPoint = {
+
+  if (dates.length === 0) {
+    return null;
+  }
+
+  // Normalize both curves to start at 100 for fair comparison
+  const firstEquity = equityCurve[dates[0]];
+  const hasBenchmark = !!benchmarkCurve;
+  const benchDates = hasBenchmark ? Object.keys(benchmarkCurve).sort() : [];
+  const firstBenchmark = hasBenchmark && benchDates.length > 0 ? benchmarkCurve[benchDates[0]] : 1;
+
+  const data: NormalizedDataPoint[] = dates.map((date) => {
+    const point: NormalizedDataPoint = {
       date,
-      equity: equityCurve[date],
+      equity: (equityCurve[date] / firstEquity) * 100,
     };
-    if (benchmarkCurve && date in benchmarkCurve) {
-      point.benchmark = benchmarkCurve[date];
+    if (hasBenchmark && date in benchmarkCurve) {
+      point.benchmark = (benchmarkCurve[date] / firstBenchmark) * 100;
     }
     return point;
   });
 
-  if (data.length === 0) {
-    return null;
-  }
-
   const lastEquity = data[data.length - 1].equity;
-  const totalReturn = ((lastEquity - initialCapital) / initialCapital) * 100;
+  const totalReturn = ((equityCurve[dates[dates.length - 1]] - initialCapital) / initialCapital) * 100;
   const isProfit = totalReturn >= 0;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base">자산 곡선</CardTitle>
+        <CardTitle className="text-base">자산 곡선 (정규화)</CardTitle>
         <span
           className={`text-sm font-medium ${isProfit ? "text-red-500" : "text-blue-500"}`}
         >
@@ -77,7 +75,7 @@ export function EquityChart({
       <CardContent>
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
+            <ComposedChart
               data={data}
               margin={{ top: 5, right: 10, left: 10, bottom: 0 }}
             >
@@ -94,10 +92,6 @@ export function EquityChart({
                     stopOpacity={0}
                   />
                 </linearGradient>
-                <linearGradient id="benchGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#a3a3a3" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#a3a3a3" stopOpacity={0} />
-                </linearGradient>
               </defs>
               <XAxis
                 dataKey="date"
@@ -109,10 +103,11 @@ export function EquityChart({
               />
               <YAxis
                 tick={{ fontSize: 11, fill: "#a3a3a3" }}
-                tickFormatter={formatCurrency}
+                tickFormatter={(v) => `${Number(v).toFixed(0)}`}
                 axisLine={false}
                 tickLine={false}
-                width={60}
+                width={45}
+                domain={["auto", "auto"]}
               />
               <Tooltip
                 contentStyle={{
@@ -123,22 +118,11 @@ export function EquityChart({
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
                 formatter={(value, name) => [
-                  `${Number(value).toLocaleString("ko-KR")}원`,
-                  name === "equity" ? "전략" : "벤치마크",
+                  `${Number(value).toFixed(2)}`,
+                  name === "equity" ? "전략" : "코스피",
                 ]}
                 labelFormatter={(label) => String(label)}
               />
-              {benchmarkCurve && (
-                <Area
-                  type="monotone"
-                  dataKey="benchmark"
-                  stroke="#a3a3a3"
-                  strokeWidth={1.5}
-                  fill="url(#benchGrad)"
-                  dot={false}
-                  name="benchmark"
-                />
-              )}
               <Area
                 type="monotone"
                 dataKey="equity"
@@ -148,8 +132,21 @@ export function EquityChart({
                 dot={false}
                 name="equity"
               />
-              {benchmarkCurve && <Legend formatter={(v) => (v === "equity" ? "전략" : "벤치마크")} />}
-            </AreaChart>
+              {hasBenchmark && (
+                <Line
+                  type="monotone"
+                  dataKey="benchmark"
+                  stroke="#a3a3a3"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  name="benchmark"
+                />
+              )}
+              <Legend
+                formatter={(v: string) => (v === "equity" ? "전략" : "코스피")}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

@@ -18,7 +18,9 @@ import {
   CalendarDays,
   Newspaper,
   Settings,
+  History,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,10 +31,25 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-const menuGroups = [
+interface MenuItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  subItems?: { title: string; href: string; icon: LucideIcon }[];
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
+
+const menuGroups: MenuGroup[] = [
   {
     label: "메인",
     items: [
@@ -43,7 +60,14 @@ const menuGroups = [
     label: "트레이딩",
     items: [
       { title: "전략 빌더", href: "/strategy", icon: Blocks },
-      { title: "백테스트", href: "/backtest", icon: FlaskConical },
+      {
+        title: "백테스트",
+        href: "/backtest",
+        icon: FlaskConical,
+        subItems: [
+          { title: "실행 이력", href: "/backtest/history", icon: History },
+        ],
+      },
       { title: "트레이딩", href: "/trading", icon: TrendingUp },
       { title: "종목 탐색", href: "/explorer", icon: Search },
       { title: "워치리스트", href: "/watchlist", icon: Star },
@@ -100,11 +124,27 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       render={<Link href={item.href} />}
-                      isActive={pathname.startsWith(item.href)}
+                      isActive={pathname === item.href || (!item.subItems && pathname.startsWith(item.href))}
                     >
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
+                    {item.subItems && (
+                      <SidebarMenuSub>
+                        {item.subItems.map((sub) => (
+                          <SidebarMenuSubItem key={sub.href}>
+                            <SidebarMenuSubButton
+                              render={<Link href={sub.href} />}
+                              isActive={pathname.startsWith(sub.href)}
+                              size="sm"
+                            >
+                              <sub.icon className="size-3.5" />
+                              <span>{sub.title}</span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
