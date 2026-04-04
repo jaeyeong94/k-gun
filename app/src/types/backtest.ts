@@ -1,8 +1,6 @@
 // --- Strategy definitions ---
 
 export interface BacktestParamDefinition {
-  name: string;
-  label: string;
   type: "int" | "float" | "bool";
   default: number | boolean;
   min?: number;
@@ -16,7 +14,8 @@ export interface BacktestStrategy {
   name: string;
   description: string;
   category: string;
-  params: BacktestParamDefinition[];
+  tags?: string[];
+  params: Record<string, BacktestParamDefinition>;
 }
 
 // --- Backtest request / response ---

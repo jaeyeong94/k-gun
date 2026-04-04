@@ -7,7 +7,13 @@ import type { BacktestStrategy as Strategy, BacktestRequest, BacktestResult } fr
 export function useStrategies() {
   return useQuery({
     queryKey: ["backtest-strategies"],
-    queryFn: () => apiGet<Strategy[]>("/api/backtest/strategies", false),
+    queryFn: async () => {
+      const res = await apiGet<{ success: boolean; data: Strategy[]; total: number }>(
+        "/api/backtest/strategies",
+        false,
+      );
+      return res.data ?? [];
+    },
     staleTime: 5 * 60_000,
   });
 }
@@ -15,14 +21,26 @@ export function useStrategies() {
 export function useStrategyCategories() {
   return useQuery({
     queryKey: ["backtest-strategy-categories"],
-    queryFn: () => apiGet<string[]>("/api/backtest/strategies/categories", false),
+    queryFn: async () => {
+      const res = await apiGet<{ success: boolean; data: string[] }>(
+        "/api/backtest/strategies/categories",
+        false,
+      );
+      return res.data ?? [];
+    },
     staleTime: 5 * 60_000,
   });
 }
 
 export function useRunBacktest() {
   return useMutation({
-    mutationFn: (request: BacktestRequest) =>
-      apiPost<BacktestResult>("/api/backtest/backtest/run", request, false),
+    mutationFn: async (request: BacktestRequest) => {
+      const res = await apiPost<{ success: boolean; data: BacktestResult }>(
+        "/api/backtest/backtest/run",
+        request,
+        false,
+      );
+      return res.data;
+    },
   });
 }

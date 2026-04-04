@@ -471,23 +471,23 @@ export default function BacktestPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedStrategy ? (
-              selectedStrategy.params.length > 0 ? (
-                selectedStrategy.params.map((p) => {
+              Object.keys(selectedStrategy.params ?? {}).length > 0 ? (
+                Object.entries(selectedStrategy.params ?? {}).map(([name, p]) => {
                   if (p.type === "bool") {
                     const checked =
-                      (store.paramOverrides[p.name] as boolean) ??
+                      (store.paramOverrides[name] as boolean) ??
                       (p.default as boolean);
                     return (
                       <div
-                        key={p.name}
+                        key={name}
                         className="flex items-center justify-between"
                       >
-                        <Label className="text-xs">{p.label}</Label>
+                        <Label className="text-xs">{p.description ?? name}</Label>
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={(e) =>
-                            store.setParamOverride(p.name, e.target.checked)
+                            store.setParamOverride(name, e.target.checked)
                           }
                           className="size-4 accent-primary"
                         />
@@ -495,18 +495,18 @@ export default function BacktestPage() {
                     );
                   }
                   const val =
-                    (store.paramOverrides[p.name] as number) ??
+                    (store.paramOverrides[name] as number) ??
                     (p.default as number);
                   return (
                     <ParamSlider
-                      key={p.name}
-                      label={p.label}
+                      key={name}
+                      label={p.description ?? name}
                       value={val}
                       min={p.min ?? 0}
                       max={p.max ?? 100}
                       step={p.step ?? (p.type === "int" ? 1 : 0.1)}
-                      description={p.description}
-                      onChange={(v) => store.setParamOverride(p.name, v)}
+                      description={name}
+                      onChange={(v) => store.setParamOverride(name, v)}
                     />
                   );
                 })

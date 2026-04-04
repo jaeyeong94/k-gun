@@ -139,7 +139,7 @@ export default function PresetsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-1">
-                        {strategy.tags.map((tag) => (
+                        {(strategy.tags ?? []).map((tag) => (
                           <Badge
                             key={tag}
                             variant="outline"

@@ -98,8 +98,8 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
 
   applyStrategyDefaults: (strategy) => {
     const overrides: Record<string, number | boolean> = {};
-    for (const p of strategy.params) {
-      overrides[p.name] = p.default;
+    for (const [name, p] of Object.entries(strategy.params ?? {})) {
+      overrides[name] = p.default;
     }
     set({ strategyId: strategy.id, paramOverrides: overrides });
   },
