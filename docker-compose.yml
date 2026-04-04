@@ -6,15 +6,16 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ~/KIS/config:/root/KIS/config:ro
+      - ~/KIS/config:/root/KIS/config
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/auth/status"]
-      interval: 30s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/auth/status')"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 10s
 
   backtester:
     build:
@@ -23,16 +24,17 @@ services:
     ports:
       - "8002:8002"
     volumes:
-      - ~/KIS/config:/root/KIS/config:ro
+      - ~/KIS/config:/root/KIS/config
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/api/auth/status"]
-      interval: 30s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/api/auth/status')"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 10s
 
   mcp-server:
     build:
@@ -42,17 +44,18 @@ services:
     ports:
       - "3846:3846"
     volumes:
-      - ~/KIS/config:/root/KIS/config:ro
+      - ~/KIS/config:/root/KIS/config
     environment:
       - MCP_HOST=0.0.0.0
       - MCP_PORT=3846
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3846/health"]
-      interval: 30s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3846/health')"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 10s
 
   app:
     build:
@@ -60,10 +63,6 @@ services:
       dockerfile: docker/app.Dockerfile
     ports:
       - "3333:3333"
-    environment:
-      - NEXT_PUBLIC_STRATEGY_API_URL=http://strategy-builder:8000
-      - NEXT_PUBLIC_BACKTEST_API_URL=http://backtester:8002
-      - NEXT_PUBLIC_MCP_URL=http://mcp-server:3846
     depends_on:
       strategy-builder:
         condition: service_healthy
