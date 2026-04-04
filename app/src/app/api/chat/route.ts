@@ -1,14 +1,27 @@
 import { spawn } from "child_process";
 
+const MAX_PROMPT_LENGTH = 4000;
+
+function sanitizePrompt(input: string): string {
+  return input
+    .slice(0, MAX_PROMPT_LENGTH)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ""); // control chars 제거
+}
+
 export async function POST(req: Request) {
   try {
     const { message } = await req.json();
 
-    if (!message) {
+    if (!message || typeof message !== "string") {
       return Response.json({ error: "메시지가 필요합니다" }, { status: 400 });
     }
 
-    const result = await runClaude(message);
+    const sanitized = sanitizePrompt(message);
+    if (sanitized.trim().length === 0) {
+      return Response.json({ error: "유효한 메시지가 아닙니다" }, { status: 400 });
+    }
+
+    const result = await runClaude(sanitized);
     return Response.json({ result });
   } catch (error) {
     const msg =

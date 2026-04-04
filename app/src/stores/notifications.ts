@@ -5,7 +5,7 @@ export interface AppNotification {
   title: string;
   body: string;
   type: "signal" | "price" | "order" | "system";
-  timestamp: Date;
+  timestamp: string;
   read: boolean;
 }
 
@@ -50,7 +50,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       title,
       body,
       type,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       read: false,
     };
 

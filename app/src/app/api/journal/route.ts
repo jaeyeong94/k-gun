@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         stockName,
         action,
         strategy: strategy ?? null,
+        signalStrength: body.signalStrength ?? null,
         price,
         quantity,
         profitLoss: profitLoss ?? 0,

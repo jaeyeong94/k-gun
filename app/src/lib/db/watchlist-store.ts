@@ -45,7 +45,7 @@ function writeData(data: WatchlistData): void {
 }
 
 function generateId(): string {
-  return `wl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return `wl_${crypto.randomUUID()}`;
 }
 
 // ─── CRUD Operations ────────────────────────────────────────
