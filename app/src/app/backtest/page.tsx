@@ -446,12 +446,12 @@ export default function BacktestPage() {
     if (!store.result || !store.strategyId) return;
     saveMutation.mutate(
       {
-        strategyId: store.strategyId,
+        strategy_id: store.strategyId,
         symbols: store.symbols,
-        startDate: store.startDate,
-        endDate: store.endDate,
-        params: JSON.stringify(store.paramOverrides),
-        result: JSON.stringify(store.result),
+        start_date: store.startDate,
+        end_date: store.endDate,
+        params: store.paramOverrides as Record<string, unknown>,
+        result: store.result,
       },
       {
         onSuccess: (data: { cacheKey?: string; alreadyExists?: boolean }) => {
