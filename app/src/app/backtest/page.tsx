@@ -244,15 +244,15 @@ function TradeTable({ trades }: { trades: TradeInfo[] }) {
       </CardHeader>
       <CardContent>
         <div className="max-h-[400px] overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[550px] text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="py-2 text-left font-medium">시간</th>
-                <th className="py-2 text-left font-medium">종목</th>
-                <th className="py-2 text-center font-medium">방향</th>
-                <th className="py-2 text-right font-medium">수량</th>
-                <th className="py-2 text-right font-medium">가격</th>
-                <th className="py-2 text-right font-medium">손익</th>
+                <th className="py-2 text-left font-medium whitespace-nowrap">시간</th>
+                <th className="py-2 text-left font-medium whitespace-nowrap">종목</th>
+                <th className="py-2 text-center font-medium whitespace-nowrap">방향</th>
+                <th className="py-2 text-right font-medium whitespace-nowrap">수량</th>
+                <th className="py-2 text-right font-medium whitespace-nowrap">가격</th>
+                <th className="py-2 text-right font-medium whitespace-nowrap">손익</th>
               </tr>
             </thead>
             <tbody>
@@ -341,9 +341,9 @@ export default function BacktestPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">백테스트</h1>
-        <Button onClick={handleRun} disabled={!canRun}>
+        <Button onClick={handleRun} disabled={!canRun} className="w-full sm:w-auto min-h-[44px]">
           {store.isRunning ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" />
@@ -359,7 +359,7 @@ export default function BacktestPage() {
       </div>
 
       {/* Config Panel */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         {/* Strategy & Stock */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
@@ -420,7 +420,7 @@ export default function BacktestPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
               <div className="space-y-2">
                 <Label className="text-xs">초기자본 (원)</Label>
                 <Input

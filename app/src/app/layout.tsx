@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { StatusBar } from "@/components/layout/status-bar";
+import { ThemeInitializer } from "@/components/layout/theme-initializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +31,15 @@ export default function RootLayout({
     <html
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="flex h-full flex-col">
+        <ThemeInitializer />
         <Providers>
           <AppSidebar />
           <div className="flex flex-1 flex-col overflow-hidden">
             <TopBar />
-            <main className="flex-1 overflow-y-auto p-4">{children}</main>
+            <main className="flex-1 overflow-y-auto p-3 sm:p-4">{children}</main>
             <StatusBar />
           </div>
         </Providers>

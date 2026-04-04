@@ -93,10 +93,11 @@ export default function PortfolioPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">포트폴리오</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">포트폴리오</h1>
         <Button
           variant="ghost"
           size="sm"
+          className="min-h-[44px] min-w-[44px]"
           onClick={() => {
             balance.refetch();
             holdings.refetch();
@@ -107,7 +108,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* 요약 */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {[
           { label: "총평가", value: bal?.total_eval },
           { label: "매입금액", value: bal?.purchase_amount },
@@ -145,7 +146,7 @@ export default function PortfolioPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         {/* 구성 비율 차트 */}
         <Card>
           <CardHeader>
@@ -208,7 +209,7 @@ export default function PortfolioPage() {
                 {holdingList.map((h, i) => (
                   <div
                     key={h.stock_code}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
                       <div

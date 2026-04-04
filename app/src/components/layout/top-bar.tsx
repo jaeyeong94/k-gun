@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function TopBar() {
   const { authenticated, mode, modeDisplay } = useAuthStore();
@@ -14,6 +15,8 @@ export function TopBar() {
       <Separator orientation="vertical" className="mr-2 h-4" />
 
       <div className="flex-1" />
+
+      <ThemeToggle />
 
       {authenticated ? (
         <Badge variant={mode === "prod" ? "destructive" : "secondary"}>

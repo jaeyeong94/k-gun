@@ -28,7 +28,7 @@ export function StatusBar() {
   }, []);
 
   return (
-    <footer className="flex h-8 shrink-0 items-center gap-4 border-t bg-muted/30 px-4 text-xs text-muted-foreground">
+    <footer className="flex h-8 shrink-0 items-center gap-2 sm:gap-4 border-t bg-muted/30 px-3 sm:px-4 text-[11px] sm:text-xs text-muted-foreground">
       <div className="flex items-center gap-1.5">
         <Circle
           className={`size-2 fill-current ${

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/stores/auth";
+import { useThemeStore } from "@/stores/theme";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,8 +12,54 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, RefreshCw } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Circle,
+  RefreshCw,
+  LogOut,
+  Settings,
+} from "lucide-react";
 
+// ---------------------------------------------------------------------------
+// Theme selector options
+// ---------------------------------------------------------------------------
+const themeOptions = [
+  { value: "light" as const, label: "라이트", icon: Sun, description: "밝은 테마" },
+  { value: "dark" as const, label: "다크", icon: Moon, description: "어두운 테마" },
+  {
+    value: "system" as const,
+    label: "시스템",
+    icon: Monitor,
+    description: "OS 설정 따르기",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Server health check targets
+// ---------------------------------------------------------------------------
+const serverTargets = [
+  { name: "Strategy Builder", port: 8000, path: "/api/strategy/health" },
+  { name: "Backtester", port: 8002, path: "/api/backtest/health" },
+  { name: "MCP Server", port: 3846, path: "/api/mcp/health" },
+];
+
+type ServerStatus = "loading" | "online" | "offline";
+
+interface MasterFileInfo {
+  kospiCount: number | null;
+  kosdaqCount: number | null;
+  lastUpdated: string | null;
+  isLoading: boolean;
+  isCollecting: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 export default function SettingsPage() {
   const {
     authenticated,
@@ -24,10 +72,105 @@ export default function SettingsPage() {
     switchMode,
   } = useAuthStore();
 
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">설정</h1>
+  const { theme, setTheme } = useThemeStore();
 
+  // Server statuses
+  const [serverStatuses, setServerStatuses] = useState<
+    Record<string, ServerStatus>
+  >(() =>
+    Object.fromEntries(serverTargets.map((t) => [t.name, "loading" as const])),
+  );
+
+  // Master file info
+  const [masterFile, setMasterFile] = useState<MasterFileInfo>({
+    kospiCount: null,
+    kosdaqCount: null,
+    lastUpdated: null,
+    isLoading: true,
+    isCollecting: false,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Server health checks
+  // ---------------------------------------------------------------------------
+  const checkServerHealth = useCallback(async () => {
+    const results = await Promise.allSettled(
+      serverTargets.map(async (target) => {
+        try {
+          const res = await fetch(target.path, {
+            signal: AbortSignal.timeout(3000),
+          });
+          return { name: target.name, status: res.ok ? "online" : "offline" } as const;
+        } catch {
+          return { name: target.name, status: "offline" } as const;
+        }
+      }),
+    );
+
+    const next: Record<string, ServerStatus> = {};
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        next[result.value.name] = result.value.status;
+      }
+    }
+    setServerStatuses((prev) => ({ ...prev, ...next }));
+  }, []);
+
+  useEffect(() => {
+    checkServerHealth();
+    const interval = setInterval(checkServerHealth, 15000);
+    return () => clearInterval(interval);
+  }, [checkServerHealth]);
+
+  // ---------------------------------------------------------------------------
+  // Master file info
+  // ---------------------------------------------------------------------------
+  const fetchMasterFileInfo = useCallback(async () => {
+    setMasterFile((prev) => ({ ...prev, isLoading: true }));
+    try {
+      const res = await fetch("/api/strategy/symbols/info");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setMasterFile({
+        kospiCount: data.kospi_count ?? null,
+        kosdaqCount: data.kosdaq_count ?? null,
+        lastUpdated: data.last_updated ?? null,
+        isLoading: false,
+        isCollecting: false,
+      });
+    } catch {
+      setMasterFile((prev) => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMasterFileInfo();
+  }, [fetchMasterFileInfo]);
+
+  const collectMasterFile = async () => {
+    setMasterFile((prev) => ({ ...prev, isCollecting: true }));
+    try {
+      const res = await fetch("/api/strategy/symbols/collect", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error();
+      await fetchMasterFileInfo();
+    } catch {
+      setMasterFile((prev) => ({ ...prev, isCollecting: false }));
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-2">
+        <Settings className="size-6" />
+        <h1 className="text-2xl font-bold">설정</h1>
+      </div>
+
+      {/* ── 인증 섹션 ── */}
       <Card>
         <CardHeader>
           <CardTitle>인증</CardTitle>
@@ -57,12 +200,161 @@ export default function SettingsPage() {
                   ? "모드 전환"
                   : `전환 대기 (${cooldownRemaining}초)`}
               </Button>
-              <Button variant="destructive" onClick={logout} disabled={isLoading}>
+              <Button
+                variant="destructive"
+                onClick={logout}
+                disabled={isLoading}
+              >
                 <LogOut className="mr-2 size-4" />
                 로그아웃
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ── 테마 섹션 ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>테마</CardTitle>
+          <CardDescription>인터페이스 테마를 선택하세요</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {themeOptions.map(({ value, label, icon: Icon, description }) => {
+              const selected = theme === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors ${
+                    selected
+                      ? "border-primary bg-primary/5"
+                      : "border-transparent bg-muted/50 hover:bg-muted"
+                  }`}
+                >
+                  <Icon className={`size-6 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-sm font-medium ${selected ? "text-primary" : ""}`}>
+                    {label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── 서버 상태 섹션 ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>서버 상태</CardTitle>
+          <CardDescription>백엔드 서비스 연결 상태</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {serverTargets.map((target) => {
+            const status = serverStatuses[target.name];
+            return (
+              <div
+                key={target.name}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Circle
+                    className={`size-3 ${
+                      status === "online"
+                        ? "fill-green-500 text-green-500"
+                        : status === "offline"
+                          ? "fill-red-500 text-red-500"
+                          : "fill-muted-foreground/30 text-muted-foreground/30 animate-pulse"
+                    }`}
+                  />
+                  <span className="text-sm font-medium">{target.name}</span>
+                </div>
+                <Badge
+                  variant={status === "online" ? "secondary" : "outline"}
+                  className="text-xs"
+                >
+                  {status === "online"
+                    ? "연결됨"
+                    : status === "offline"
+                      ? "연결 안됨"
+                      : "확인 중..."}
+                </Badge>
+              </div>
+            );
+          })}
+
+          <Separator />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={checkServerHealth}
+            className="w-full"
+          >
+            <RefreshCw className="mr-2 size-4" />
+            새로고침
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* ── 마스터 파일 섹션 ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>마스터 파일</CardTitle>
+          <CardDescription>
+            종목 심볼 마스터 데이터 관리
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">KOSPI 종목 수</span>
+              {masterFile.isLoading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <p className="text-lg font-semibold">
+                  {masterFile.kospiCount != null
+                    ? masterFile.kospiCount.toLocaleString()
+                    : "-"}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">KOSDAQ 종목 수</span>
+              {masterFile.isLoading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <p className="text-lg font-semibold">
+                  {masterFile.kosdaqCount != null
+                    ? masterFile.kosdaqCount.toLocaleString()
+                    : "-"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {masterFile.lastUpdated && (
+            <p className="text-xs text-muted-foreground">
+              최종 업데이트: {masterFile.lastUpdated}
+            </p>
+          )}
+
+          <Button
+            variant="outline"
+            onClick={collectMasterFile}
+            disabled={masterFile.isCollecting}
+            className="w-full"
+          >
+            <RefreshCw
+              className={`mr-2 size-4 ${masterFile.isCollecting ? "animate-spin" : ""}`}
+            />
+            {masterFile.isCollecting ? "수집 중..." : "마스터 파일 수집"}
+          </Button>
         </CardContent>
       </Card>
     </div>

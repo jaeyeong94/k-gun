@@ -126,7 +126,7 @@ function StrategyPanel() {
                 <button
                   key={s.id}
                   onClick={() => setSelectedStrategy(s.id)}
-                  className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                  className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors min-h-[44px] ${
                     selectedStrategyId === s.id
                       ? "border-primary bg-primary/5 text-foreground"
                       : "border-border bg-background text-muted-foreground hover:border-primary/50"
@@ -162,7 +162,7 @@ function StrategyPanel() {
 
         {/* Generate button */}
         <Button
-          className="w-full"
+          className="w-full min-h-[44px]"
           onClick={handleGenerate}
           disabled={!selectedStrategyId || !stockCodes.trim() || isGenerating}
         >
@@ -516,14 +516,14 @@ export default function TradingPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">트레이딩</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">트레이딩</h1>
         <Badge variant="outline" className="gap-1.5">
           <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />
           Live
         </Badge>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr_300px] md:grid-cols-1">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[280px_1fr_300px]">
         {/* Left: Strategy selector */}
         <StrategyPanel />
 

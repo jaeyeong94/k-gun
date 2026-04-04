@@ -62,7 +62,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => login("vps")}
               disabled={isLoading}
-              className="w-full"
+              className="w-full min-h-[44px]"
             >
               <LogIn className="mr-2 size-4" />
               {isLoading ? "인증 중..." : "모의투자 로그인"}
@@ -71,7 +71,7 @@ export default function DashboardPage() {
               onClick={() => login("prod")}
               disabled={isLoading}
               variant="destructive"
-              className="w-full"
+              className="w-full min-h-[44px]"
             >
               <LogIn className="mr-2 size-4" />
               {isLoading ? "인증 중..." : "실전투자 로그인"}
@@ -90,11 +90,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">대시보드</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">대시보드</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
+            className="min-h-[44px] min-w-[44px]"
             onClick={() => {
               balance.refetch();
               holdings.refetch();
@@ -110,7 +111,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 잔고 카드 */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">예수금</CardTitle>
@@ -161,7 +162,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 시장 지수 */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         {[
           { data: kospi, label: "코스피" },
           { data: kosdaq, label: "코스닥" },
@@ -215,15 +216,15 @@ export default function DashboardPage() {
         {holdingList.length > 0 && (
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
                     <th className="py-2 text-left font-medium">종목</th>
-                    <th className="py-2 text-right font-medium">수량</th>
-                    <th className="py-2 text-right font-medium">평균단가</th>
-                    <th className="py-2 text-right font-medium">현재가</th>
-                    <th className="py-2 text-right font-medium">평가금액</th>
-                    <th className="py-2 text-right font-medium">수익률</th>
+                    <th className="py-2 text-right font-medium whitespace-nowrap">수량</th>
+                    <th className="py-2 text-right font-medium whitespace-nowrap">평균단가</th>
+                    <th className="py-2 text-right font-medium whitespace-nowrap">현재가</th>
+                    <th className="py-2 text-right font-medium whitespace-nowrap">평가금액</th>
+                    <th className="py-2 text-right font-medium whitespace-nowrap">수익률</th>
                   </tr>
                 </thead>
                 <tbody>
