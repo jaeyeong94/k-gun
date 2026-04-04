@@ -1,3 +1,5 @@
+"use client";
+
 type QueueItem = {
   fn: () => Promise<unknown>;
   resolve: (value: unknown) => void;
