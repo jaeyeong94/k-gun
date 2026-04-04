@@ -88,8 +88,17 @@ export interface TradeInfo {
 }
 
 export interface BacktestResult {
+  run_id?: string;
+  strategy_name?: string;
+  start_date?: string;
+  end_date?: string;
+  initial_capital?: number;
+  final_capital?: number;
+  net_profit?: number;
+  net_profit_percent?: number;
   metrics: PerformanceMetrics;
   equity_curve: Record<string, number>;
   trades: TradeInfo[];
+  trades_count?: number;
   benchmark_curve?: Record<string, number>;
 }
