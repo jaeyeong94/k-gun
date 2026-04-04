@@ -31,7 +31,7 @@ function applyTheme(theme: Theme) {
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  theme: getStoredTheme(),
+  theme: "dark" as Theme, // SSR-safe default, overridden by initializeTheme
   setTheme: (theme) => {
     localStorage.setItem("k-gun-theme", theme);
     applyTheme(theme);
@@ -41,8 +41,9 @@ export const useThemeStore = create<ThemeState>((set) => ({
 
 /** Call once on mount to sync DOM with persisted preference */
 export function initializeTheme() {
-  const theme = useThemeStore.getState().theme;
-  applyTheme(theme);
+  const stored = getStoredTheme();
+  useThemeStore.setState({ theme: stored });
+  applyTheme(stored);
 
   // Listen for system preference changes when in "system" mode
   const mql = window.matchMedia("(prefers-color-scheme: dark)");
