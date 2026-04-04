@@ -41,54 +41,76 @@ interface MetricGroup {
   items: MetricItem[];
 }
 
+function safe(v: unknown): number {
+  return typeof v === "number" ? v : 0;
+}
+
 function buildGroups(m: PerformanceMetrics): MetricGroup[] {
+  // API 응답이 중첩(basic/risk/trading) 또는 플랫 구조일 수 있으므로 양쪽 지원
+  const basic = (m as Record<string, unknown>).basic as Record<string, number> | undefined;
+  const risk = (m as Record<string, unknown>).risk as Record<string, number> | undefined;
+  const trading = (m as Record<string, unknown>).trading as Record<string, number> | undefined;
+  const vol = (m as Record<string, unknown>).volatility as Record<string, number> | undefined;
+
+  const totalReturn = safe(basic?.total_return ?? m.total_return);
+  const annualReturn = safe(basic?.annual_return ?? m.annualized_return);
+  const maxDrawdown = safe(basic?.max_drawdown ?? m.max_drawdown);
+  const sharpe = safe(risk?.sharpe_ratio ?? m.sharpe_ratio);
+  const sortino = safe(risk?.sortino_ratio ?? m.sortino_ratio);
+  const volatility = safe(vol?.annual_std_dev ?? m.volatility);
+  const totalTrades = safe(trading?.total_orders ?? m.total_trades);
+  const winRate = safe(trading?.win_rate ?? m.win_rate);
+  const lossRate = safe(trading?.loss_rate);
+  const avgWin = safe(trading?.avg_win ?? m.avg_profit);
+  const avgLoss = safe(trading?.avg_loss ?? m.avg_loss);
+  const plRatio = safe(trading?.profit_loss_ratio ?? m.profit_factor);
+
   return [
     {
       title: "수익률",
       items: [
         {
           label: "총 수익률",
-          value: pct(m.total_return),
-          colorClass: profitColor(m.total_return),
+          value: pct(totalReturn / 100),
+          colorClass: profitColor(totalReturn),
         },
         {
           label: "연환산 수익률",
-          value: pct(m.annualized_return),
-          colorClass: profitColor(m.annualized_return),
+          value: pct(annualReturn / 100),
+          colorClass: profitColor(annualReturn),
         },
       ],
     },
     {
       title: "리스크",
       items: [
-        { label: "샤프 비율", value: num(m.sharpe_ratio) },
-        { label: "소르티노 비율", value: num(m.sortino_ratio) },
+        { label: "샤프 비율", value: num(sharpe) },
+        { label: "소르티노 비율", value: num(sortino) },
         {
           label: "최대 낙폭",
-          value: pct(m.max_drawdown),
+          value: pct(maxDrawdown / 100),
           colorClass: "text-blue-500",
         },
-        { label: "변동성", value: pct(m.volatility) },
+        { label: "변동성", value: pct(volatility) },
       ],
     },
     {
       title: "거래 통계",
       items: [
-        { label: "총 거래 수", value: `${m.total_trades}회` },
-        { label: "승률", value: pct(m.win_rate) },
-        { label: "승리 거래", value: `${m.winning_trades}회` },
-        { label: "패배 거래", value: `${m.losing_trades}회` },
+        { label: "총 거래 수", value: `${totalTrades}회` },
+        { label: "승률", value: pct(winRate / 100) },
+        { label: "패배율", value: pct(lossRate / 100) },
         {
           label: "평균 수익",
-          value: won(m.avg_profit),
+          value: won(avgWin),
           colorClass: "text-red-500",
         },
         {
           label: "평균 손실",
-          value: won(m.avg_loss),
+          value: won(avgLoss),
           colorClass: "text-blue-500",
         },
-        { label: "손익비", value: num(m.profit_factor) },
+        { label: "손익비", value: num(plRatio) },
       ],
     },
   ];

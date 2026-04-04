@@ -18,8 +18,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "K-Gun | Trading Control Panel",
+  title: "투깨비 | 트레이딩 컨트롤패널",
   description: "한국투자증권 Open API 기반 통합 트레이딩 컨트롤패널",
+  icons: {
+    icon: "/kgun-logo.svg",
+  },
 };
 
 export default function RootLayout({

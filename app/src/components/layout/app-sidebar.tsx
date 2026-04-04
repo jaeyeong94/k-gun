@@ -82,9 +82,9 @@ export function AppSidebar() {
             className="h-10 w-10"
           />
           <div>
-            <div className="font-bold text-base">K-Gun</div>
+            <div className="font-bold text-base">투깨비</div>
             <div className="text-[10px] text-muted-foreground">
-              Trading Control Panel
+              트레이딩 컨트롤패널
             </div>
           </div>
         </Link>

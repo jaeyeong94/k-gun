@@ -553,10 +553,10 @@ export default function BacktestPage() {
         <div className="space-y-6">
           {/* Summary Cards */}
           <SummaryCards
-            totalReturn={store.result.metrics.total_return}
-            sharpeRatio={store.result.metrics.sharpe_ratio}
-            maxDrawdown={store.result.metrics.max_drawdown}
-            winRate={store.result.metrics.win_rate}
+            totalReturn={(store.result.metrics.basic?.total_return ?? 0) / 100}
+            sharpeRatio={store.result.metrics.risk?.sharpe_ratio ?? 0}
+            maxDrawdown={(store.result.metrics.basic?.max_drawdown ?? 0) / 100}
+            winRate={(store.result.metrics.trading?.win_rate ?? 0) / 100}
           />
 
           {/* Tabs for details */}

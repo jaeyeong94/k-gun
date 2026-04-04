@@ -33,26 +33,48 @@ export interface BacktestRequest {
 }
 
 export interface PerformanceMetrics {
-  // Basic
-  total_return: number;
-  annualized_return: number;
-  total_trades: number;
-  winning_trades: number;
-  losing_trades: number;
-  win_rate: number;
-  // Risk
-  sharpe_ratio: number;
-  sortino_ratio: number;
-  max_drawdown: number;
-  max_drawdown_duration?: number;
-  volatility: number;
-  // Trading
-  avg_profit: number;
-  avg_loss: number;
-  profit_factor: number;
-  avg_holding_period?: number;
-  // Extra fields (dynamic)
-  [key: string]: number | string | undefined;
+  basic: {
+    total_return: number;
+    annual_return: number;
+    max_drawdown: number;
+    start_equity: number;
+    end_equity: number;
+  };
+  risk: {
+    sharpe_ratio: number;
+    sortino_ratio: number;
+    probabilistic_sharpe: number;
+  };
+  greeks: {
+    alpha: number;
+    beta: number;
+  };
+  volatility: {
+    annual_std_dev: number;
+    annual_variance: number;
+  };
+  benchmark: {
+    information_ratio: number;
+    tracking_error: number;
+    treynor_ratio: number;
+  };
+  trading: {
+    total_orders: number;
+    win_rate: number;
+    loss_rate: number;
+    avg_win: number;
+    avg_loss: number;
+    profit_loss_ratio: number;
+    expectancy: number;
+  };
+  other: {
+    total_fees: number;
+    portfolio_turnover: number;
+    estimated_capacity: number;
+    drawdown_recovery: number;
+  };
+  // 플랫 구조 호환 (레거시)
+  [key: string]: unknown;
 }
 
 export interface TradeInfo {
