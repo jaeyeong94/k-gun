@@ -1,5 +1,7 @@
-import { readCollection, addToCollection } from "@/lib/store/json-store";
-import type { MarketEvent, EventType } from "@/types/calendar";
+import { db } from "@/lib/db";
+import { marketEvents } from "@/lib/db/schema";
+import { eq, like, and, asc } from "drizzle-orm";
+import type { EventType } from "@/types/calendar";
 
 export async function GET(request: Request) {
   try {
@@ -7,19 +9,37 @@ export async function GET(request: Request) {
     const month = searchParams.get("month"); // YYYY-MM
     const type = searchParams.get("type") as EventType | null;
 
-    let events = readCollection<MarketEvent>("market-events");
+    let query = db.select().from(marketEvents);
 
+    const conditions = [];
     if (month) {
-      events = events.filter((e) => e.date.startsWith(month));
+      conditions.push(like(marketEvents.date, `${month}%`));
     }
-
     if (type) {
-      events = events.filter((e) => e.type === type);
+      conditions.push(eq(marketEvents.type, type));
     }
 
-    events.sort((a, b) => a.date.localeCompare(b.date));
+    let events;
+    if (conditions.length === 1) {
+      events = query.where(conditions[0]).orderBy(asc(marketEvents.date)).all();
+    } else if (conditions.length === 2) {
+      events = query.where(and(...conditions)).orderBy(asc(marketEvents.date)).all();
+    } else {
+      events = query.orderBy(asc(marketEvents.date)).all();
+    }
 
-    return Response.json({ events });
+    // Map to API response format matching MarketEvent interface
+    const result = events.map((e) => ({
+      id: String(e.id),
+      date: e.date,
+      type: e.type,
+      stockCode: e.stockCode ?? undefined,
+      name: e.name,
+      description: e.description ?? undefined,
+      importance: e.importance ?? "medium",
+    }));
+
+    return Response.json({ events: result });
   } catch (error) {
     const msg =
       error instanceof Error ? error.message : "이벤트 조회 실패";
@@ -53,18 +73,36 @@ export async function POST(request: Request) {
       );
     }
 
-    const event: MarketEvent = {
-      id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      date,
-      type,
-      stockCode: stockCode || undefined,
-      name,
-      description: description || undefined,
-      importance: importance || "medium",
-      createdAt: new Date().toISOString(),
-    };
+    db.insert(marketEvents)
+      .values({
+        date,
+        type,
+        stockCode: stockCode || null,
+        name,
+        description: description || null,
+        importance: importance || "medium",
+      })
+      .run();
 
-    addToCollection("market-events", event);
+    // Get the last inserted row
+    const inserted = db
+      .select()
+      .from(marketEvents)
+      .orderBy(asc(marketEvents.id))
+      .all()
+      .pop();
+
+    const event = inserted
+      ? {
+          id: String(inserted.id),
+          date: inserted.date,
+          type: inserted.type,
+          stockCode: inserted.stockCode ?? undefined,
+          name: inserted.name,
+          description: inserted.description ?? undefined,
+          importance: inserted.importance ?? "medium",
+        }
+      : null;
 
     return Response.json({ event }, { status: 201 });
   } catch (error) {
