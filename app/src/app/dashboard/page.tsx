@@ -19,7 +19,15 @@ import {
   TrendingDown,
   BarChart3,
   RefreshCw,
+  Zap,
+  FlaskConical,
+  Search,
+  MessageSquare,
+  Signal,
+  LayoutDashboard,
 } from "lucide-react";
+import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
 
 function formatNumber(n: number): string {
   return n.toLocaleString("ko-KR");
@@ -89,26 +97,23 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">대시보드</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="min-h-[44px] min-w-[44px]"
-            onClick={() => {
-              balance.refetch();
-              holdings.refetch();
-              marketIndex.refetch();
-            }}
-          >
-            <RefreshCw className="size-4" />
-          </Button>
-          <Badge variant={mode === "prod" ? "destructive" : "secondary"}>
-            {mode === "prod" ? "실전투자" : "모의투자"}
-          </Badge>
-        </div>
-      </div>
+      <PageHeader icon={LayoutDashboard} title="대시보드">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-[44px] min-w-[44px]"
+          onClick={() => {
+            balance.refetch();
+            holdings.refetch();
+            marketIndex.refetch();
+          }}
+        >
+          <RefreshCw className="size-4" />
+        </Button>
+        <Badge variant={mode === "prod" ? "destructive" : "secondary"}>
+          {mode === "prod" ? "실전투자" : "모의투자"}
+        </Badge>
+      </PageHeader>
 
       {/* 잔고 카드 */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
@@ -259,6 +264,93 @@ export default function DashboardPage() {
           </CardContent>
         )}
       </Card>
+
+      {/* 최근 신호 & 빠른 액션 */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        {/* 최근 신호 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Signal className="size-4" />
+              최근 신호
+            </CardTitle>
+            <CardDescription>최근 트레이딩 신호 결과</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { stock: "삼성전자", action: "BUY" as const, strength: 0.82, time: "14:30" },
+                { stock: "SK하이닉스", action: "HOLD" as const, strength: 0.45, time: "13:15" },
+                { stock: "NAVER", action: "SELL" as const, strength: 0.71, time: "11:00" },
+              ].map((signal) => (
+                <div
+                  key={`${signal.stock}-${signal.time}`}
+                  className="flex items-center justify-between rounded-lg border p-2.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        signal.action === "BUY"
+                          ? "destructive"
+                          : signal.action === "SELL"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="font-mono text-[10px]"
+                    >
+                      {signal.action === "BUY"
+                        ? "매수"
+                        : signal.action === "SELL"
+                          ? "매도"
+                          : "보류"}
+                    </Badge>
+                    <span className="text-sm font-medium">{signal.stock}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>강도 {(signal.strength * 100).toFixed(0)}%</span>
+                    <span>{signal.time}</span>
+                  </div>
+                </div>
+              ))}
+              <p className="text-center text-[11px] text-muted-foreground/60">
+                예시 데이터입니다. 전략 실행 시 실제 신호가 표시됩니다.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 빠른 액션 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="size-4" />
+              빠른 액션
+            </CardTitle>
+            <CardDescription>자주 사용하는 기능 바로가기</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "전략 실행", href: "/trading", icon: Zap, color: "text-red-500 bg-red-500/10" },
+                { label: "백테스트", href: "/backtest", icon: FlaskConical, color: "text-purple-500 bg-purple-500/10" },
+                { label: "종목 탐색", href: "/explorer", icon: Search, color: "text-blue-500 bg-blue-500/10" },
+                { label: "AI 질문", href: "/chat", icon: MessageSquare, color: "text-green-500 bg-green-500/10" },
+              ].map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 hover:border-primary/30"
+                >
+                  <div className={`flex size-9 items-center justify-center rounded-lg ${action.color}`}>
+                    <action.icon className="size-4" />
+                  </div>
+                  <span className="text-sm font-medium">{action.label}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

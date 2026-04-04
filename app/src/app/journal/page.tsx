@@ -40,6 +40,7 @@ import {
   ArrowDownRight,
   Calendar,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 const TAG_OPTIONS = [
   "원칙준수",
@@ -399,13 +400,9 @@ export default function JournalPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
-          <BookOpen className="size-6" />
-          매매 저널
-        </h1>
+      <PageHeader icon={BookOpen} title="매매 저널">
         <CreateJournalDialog />
-      </div>
+      </PageHeader>
 
       {/* Daily Summary */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -552,9 +549,14 @@ export default function JournalPage() {
               ))}
             </div>
           ) : (
-            <div className="flex h-32 items-center justify-center text-muted-foreground">
-              매매 기록이 없습니다. 위의 &quot;매매 기록 추가&quot; 버튼으로
-              기록을 시작하세요.
+            <div className="flex flex-col items-center gap-3 py-12">
+              <BookOpen className="size-12 text-muted-foreground/30" />
+              <div className="text-center">
+                <p className="font-medium text-muted-foreground">매매 기록이 없습니다</p>
+                <p className="mt-1 text-sm text-muted-foreground/70">
+                  위의 &quot;매매 기록 추가&quot; 버튼으로 기록을 시작하세요
+                </p>
+              </div>
             </div>
           )}
         </CardContent>

@@ -32,6 +32,7 @@ import {
   Activity,
   LineChart as LineChartIcon,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 // --- Helpers ---
 
@@ -359,12 +360,7 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold">성과 추적</h1>
-          <LineChartIcon className="size-5 text-muted-foreground" />
-        </div>
-      </div>
+      <PageHeader icon={LineChartIcon} title="성과 추적" />
 
       {/* Strategy Selector */}
       <Card>
@@ -467,10 +463,14 @@ export default function PerformancePage() {
               )}
               {liveRecords.length === 0 && backtestRecords.length === 0 && (
                 <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      선택한 전략의 성과 데이터가 없습니다
-                    </p>
+                  <CardContent className="flex flex-col items-center gap-3 py-16">
+                    <LineChartIcon className="size-12 text-muted-foreground/30" />
+                    <div className="text-center">
+                      <p className="font-medium text-muted-foreground">성과 데이터가 없습니다</p>
+                      <p className="mt-1 text-sm text-muted-foreground/70">
+                        전략을 실행하거나 백테스트를 수행하면 성과 데이터가 표시됩니다
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -492,10 +492,14 @@ export default function PerformancePage() {
             />
           ) : (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  비교할 데이터가 없습니다
-                </p>
+              <CardContent className="flex flex-col items-center gap-3 py-16">
+                <BarChart3 className="size-12 text-muted-foreground/30" />
+                <div className="text-center">
+                  <p className="font-medium text-muted-foreground">비교할 데이터가 없습니다</p>
+                  <p className="mt-1 text-sm text-muted-foreground/70">
+                    실전 또는 백테스트 데이터가 있어야 비교할 수 있습니다
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}

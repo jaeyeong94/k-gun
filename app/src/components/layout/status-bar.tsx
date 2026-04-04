@@ -48,6 +48,11 @@ export function StatusBar() {
         </span>
       </div>
 
+      <span className="hidden sm:inline text-muted-foreground/50">|</span>
+      <span className="hidden sm:inline text-[10px] text-muted-foreground/50">
+        본 서비스는 투자 권유가 아니며, 투자 책임은 본인에게 있습니다.
+      </span>
+
       <div className="flex-1" />
 
       <span>

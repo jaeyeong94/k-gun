@@ -12,7 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, PieChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { RefreshCw, PieChart, ArrowUpRight, ArrowDownRight, Briefcase } from "lucide-react";
+import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   PieChart as RechartsPie,
   Pie,
@@ -66,8 +68,13 @@ export default function PortfolioPage() {
 
   if (!authenticated) {
     return (
-      <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        로그인 후 이용 가능합니다
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <Briefcase className="size-12 text-muted-foreground/30" />
+        <p className="font-medium text-muted-foreground">로그인 후 이용 가능합니다</p>
+        <p className="text-sm text-muted-foreground/70">대시보드에서 로그인해주세요</p>
+        <Button variant="outline" size="sm" render={<Link href="/dashboard" />} nativeButton={false}>
+          대시보드로 이동
+        </Button>
       </div>
     );
   }
@@ -92,8 +99,7 @@ export default function PortfolioPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">포트폴리오</h1>
+      <PageHeader icon={PieChart} title="포트폴리오">
         <Button
           variant="ghost"
           size="sm"
@@ -105,7 +111,7 @@ export default function PortfolioPage() {
         >
           <RefreshCw className="size-4" />
         </Button>
-      </div>
+      </PageHeader>
 
       {/* 요약 */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -186,8 +192,9 @@ export default function PortfolioPage() {
                 </RechartsPie>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[220px] items-center justify-center text-muted-foreground">
-                데이터 없음
+              <div className="flex h-[220px] flex-col items-center justify-center gap-2">
+                <PieChart className="size-10 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">보유 종목이 없습니다</p>
               </div>
             )}
           </CardContent>
@@ -236,8 +243,17 @@ export default function PortfolioPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex h-32 items-center justify-center text-muted-foreground">
-                보유 종목이 없습니다. 트레이딩 메뉴에서 매수해보세요.
+              <div className="flex flex-col items-center gap-3 py-12">
+                <Briefcase className="size-12 text-muted-foreground/30" />
+                <div className="text-center">
+                  <p className="font-medium text-muted-foreground">보유 종목이 없습니다</p>
+                  <p className="mt-1 text-sm text-muted-foreground/70">
+                    트레이딩 메뉴에서 매수하면 여기에 표시됩니다
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" render={<Link href="/trading" />} nativeButton={false}>
+                  트레이딩으로 이동
+                </Button>
               </div>
             )}
           </CardContent>

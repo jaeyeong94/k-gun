@@ -46,6 +46,7 @@ import {
   ListPlus,
   Eye,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -575,12 +576,11 @@ export default function WatchlistPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">워치리스트</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          관심 종목을 관리하고 실시간 시세를 확인하세요
-        </p>
-      </div>
+      <PageHeader
+        icon={Star}
+        title="워치리스트"
+        description="관심 종목을 관리하고 실시간 시세를 확인하세요"
+      />
 
       {/* Content */}
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
