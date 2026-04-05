@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { TopBar } from "./top-bar";
 import { StatusBar } from "./status-bar";
@@ -16,13 +17,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <SidebarProvider>
       <AppSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-3 sm:p-4">{children}</main>
         <StatusBar />
       </div>
-    </>
+    </SidebarProvider>
   );
 }
