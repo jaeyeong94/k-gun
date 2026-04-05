@@ -13,6 +13,11 @@ interface BacktestState {
   slippage: number;
   paramOverrides: Record<string, number | boolean>;
 
+  // Custom strategy
+  isCustomMode: boolean;
+  customYaml: string | null;
+  customStrategyName: string | null;
+
   // Results
   result: BacktestResult | null;
   isRunning: boolean;
@@ -34,6 +39,8 @@ interface BacktestState {
   setError: (error: string | null) => void;
   buildRequest: () => BacktestRequest;
   applyStrategyDefaults: (strategy: Strategy) => void;
+  setCustomMode: (yaml: string, name: string) => void;
+  clearCustomMode: () => void;
 }
 
 function getDefaultDates() {
@@ -58,6 +65,10 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
   taxRate: 0.0023,
   slippage: 0.001,
   paramOverrides: {},
+
+  isCustomMode: false,
+  customYaml: null,
+  customStrategyName: null,
 
   result: null,
   isRunning: false,
@@ -101,6 +112,12 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
     for (const [name, p] of Object.entries(strategy.params ?? {})) {
       overrides[name] = p.default;
     }
-    set({ strategyId: strategy.id, paramOverrides: overrides });
+    set({ strategyId: strategy.id, paramOverrides: overrides, isCustomMode: false, customYaml: null, customStrategyName: null });
   },
+
+  setCustomMode: (yaml, name) =>
+    set({ isCustomMode: true, customYaml: yaml, customStrategyName: name, strategyId: "__custom__" }),
+
+  clearCustomMode: () =>
+    set({ isCustomMode: false, customYaml: null, customStrategyName: null, strategyId: "" }),
 }));

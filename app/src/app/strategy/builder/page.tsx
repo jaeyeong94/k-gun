@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import yaml from "js-yaml";
 import { useIndicators } from "@/hooks/use-strategies";
 import { useStrategyStore } from "@/stores/strategy";
+import { saveCustomStrategy } from "@/lib/custom-strategy";
 import {
   Card,
   CardContent,
@@ -24,6 +26,8 @@ import {
   Trash2,
   Check,
   RotateCcw,
+  Play,
+  Zap,
 } from "lucide-react";
 import type { Condition } from "@/types/strategy";
 
@@ -106,6 +110,7 @@ function ConditionRow({
 }
 
 export default function BuilderPage() {
+  const router = useRouter();
   const { data: indicatorsData, isLoading: indicatorsLoading } =
     useIndicators();
   const indicators = indicatorsData?.indicators ?? [];
@@ -153,6 +158,28 @@ export default function BuilderPage() {
     store.exitConditions,
     store.riskManagement,
   ]);
+
+  const canExport = store.name.trim().length > 0 && store.selectedIndicators.length > 0;
+
+  const handleSaveAndNavigate = useCallback(
+    (target: "backtest" | "trading") => {
+      saveCustomStrategy({
+        name: store.name || "커스텀 전략",
+        builderState: {
+          name: store.name,
+          description: store.description,
+          selectedIndicators: store.selectedIndicators,
+          entryConditions: store.entryConditions,
+          exitConditions: store.exitConditions,
+          riskManagement: store.riskManagement,
+        },
+        yamlContent: yamlPreview,
+        savedAt: new Date().toISOString(),
+      });
+      router.push(target === "backtest" ? "/backtest?custom=true" : "/trading?custom=true");
+    },
+    [store, yamlPreview, router],
+  );
 
   const stepValue = String(store.currentStep);
 
@@ -472,20 +499,40 @@ export default function BuilderPage() {
         >
           이전 단계
         </Button>
-        <span className="text-sm text-muted-foreground">
-          {store.currentStep + 1} / {STEPS.length}
-        </span>
-        {store.currentStep < STEPS.length - 1 ? (
-          <Button onClick={() => store.setStep(store.currentStep + 1)}>
-            다음 단계
-          </Button>
-        ) : (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {store.currentStep + 1} / {STEPS.length}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
-            disabled={!store.name || store.selectedIndicators.length === 0}
+            variant="outline"
+            disabled={!canExport}
+            onClick={() => handleSaveAndNavigate("backtest")}
           >
-            전략 저장
+            <Play className="mr-1.5 size-3.5" />
+            백테스트 실행
           </Button>
-        )}
+          <Button
+            variant="outline"
+            disabled={!canExport}
+            onClick={() => handleSaveAndNavigate("trading")}
+          >
+            <Zap className="mr-1.5 size-3.5" />
+            신호 확인
+          </Button>
+          {store.currentStep < STEPS.length - 1 ? (
+            <Button onClick={() => store.setStep(store.currentStep + 1)}>
+              다음 단계
+            </Button>
+          ) : (
+            <Button
+              disabled={!canExport}
+            >
+              전략 저장
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

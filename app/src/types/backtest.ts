@@ -32,6 +32,17 @@ export interface BacktestRequest {
   param_overrides: Record<string, number | boolean>;
 }
 
+export interface CustomBacktestRequest {
+  yaml_content: string;
+  symbols: string[];
+  start_date: string;
+  end_date: string;
+  initial_capital: number;
+  commission_rate: number;
+  tax_rate: number;
+  slippage: number;
+}
+
 export interface PerformanceMetrics {
   basic: {
     total_return: number;

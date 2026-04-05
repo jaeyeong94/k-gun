@@ -2,7 +2,8 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useBacktestStore } from "@/stores/backtest";
-import { useStrategies, useRunBacktest } from "@/hooks/use-backtest";
+import { useStrategies, useRunBacktest, useRunCustomBacktest } from "@/hooks/use-backtest";
+import { loadCustomStrategy } from "@/lib/custom-strategy";
 import { EquityChart } from "@/components/backtest/equity-chart";
 import { MetricsGrid } from "@/components/backtest/metrics-grid";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import {
   ClipboardCopy,
   Check,
 } from "lucide-react";
-import type { BacktestStrategy as Strategy, TradeInfo } from "@/types/backtest";
+import type { BacktestStrategy as Strategy, BacktestResult, TradeInfo } from "@/types/backtest";
 import { StockSearchInput, getStockName } from "@/components/stock/stock-search-input";
 import { useSaveBacktestResult } from "@/hooks/use-backtest-history";
 import { subMonths, subYears, format } from "date-fns";
@@ -78,10 +79,16 @@ function StrategySelector({
   strategies,
   selectedId,
   onSelect,
+  isCustomMode,
+  customStrategyName,
+  onClearCustom,
 }: {
   strategies: Strategy[];
   selectedId: string;
   onSelect: (strategy: Strategy) => void;
+  isCustomMode?: boolean;
+  customStrategyName?: string | null;
+  onClearCustom?: () => void;
 }) {
   const grouped = strategies.reduce(
     (acc, s) => {
@@ -96,15 +103,32 @@ function StrategySelector({
   return (
     <div className="space-y-2">
       <Label>전략 선택</Label>
+      {isCustomMode && (
+        <div className="flex items-center gap-2 rounded-lg border border-primary bg-primary/5 px-3 py-2">
+          <Badge variant="default" className="shrink-0">커스텀</Badge>
+          <span className="text-sm font-medium flex-1">{customStrategyName || "커스텀 전략"}</span>
+          {onClearCustom && (
+            <Button variant="ghost" size="sm" onClick={onClearCustom} className="h-6 px-2 text-xs">
+              해제
+            </Button>
+          )}
+        </div>
+      )}
       <select
-        value={selectedId}
+        value={isCustomMode ? "__custom__" : selectedId}
         onChange={(e) => {
+          if (e.target.value === "__custom__") return;
+          if (onClearCustom) onClearCustom();
           const strat = strategies.find((s) => s.id === e.target.value);
           if (strat) onSelect(strat);
         }}
         className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        disabled={isCustomMode}
       >
         <option value="">전략을 선택하세요</option>
+        {isCustomMode && (
+          <option value="__custom__">{customStrategyName || "커스텀 전략"}</option>
+        )}
         {Object.entries(grouped).map(([category, strats]) => (
           <optgroup key={category} label={category}>
             {strats.map((s) => (
@@ -406,10 +430,20 @@ export default function BacktestPage() {
   const store = useBacktestStore();
   const { data: strategies, isLoading: strategiesLoading } = useStrategies();
 
-  // URL 파라미터에서 초기값 설정 (이력에서 재실행 시)
+  // URL 파라미터에서 초기값 설정 (이력에서 재실행 시 / 커스텀 전략)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+
+    // 커스텀 전략 모드
+    if (params.get("custom") === "true") {
+      const saved = loadCustomStrategy();
+      if (saved) {
+        store.setCustomMode(saved.yamlContent, saved.name);
+        return;
+      }
+    }
+
     const strategy = params.get("strategy");
     const symbols = params.get("symbols");
     const start = params.get("start");
@@ -419,39 +453,63 @@ export default function BacktestPage() {
     if (start) store.setStartDate(start);
     if (end) store.setEndDate(end);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const mutation = useRunBacktest();
+  const customMutation = useRunCustomBacktest();
 
   const selectedStrategy = strategies?.find(
     (s) => s.id === store.strategyId,
   );
 
-  // Auto-select first strategy when loaded
+  // Auto-select first strategy when loaded (only if not in custom mode)
   useEffect(() => {
+    if (store.isCustomMode) return;
     if (strategies && strategies.length > 0 && !store.strategyId) {
       store.applyStrategyDefaults(strategies[0]);
     }
-  }, [strategies, store.strategyId, store.applyStrategyDefaults]);
+  }, [strategies, store.strategyId, store.applyStrategyDefaults, store.isCustomMode]);
 
   const handleRun = useCallback(() => {
-    if (!store.strategyId) return;
-    const request = store.buildRequest();
+    if (!store.strategyId && !store.isCustomMode) return;
+
     store.setIsRunning(true);
     store.setError(null);
     store.setResult(null);
 
-    mutation.mutate(request, {
-      onSuccess: (data) => {
-        store.setResult(data);
-        store.setIsRunning(false);
-      },
-      onError: (err) => {
-        store.setError(
-          err instanceof Error ? err.message : "백테스트 실행 실패",
-        );
-        store.setIsRunning(false);
-      },
-    });
-  }, [store, mutation]);
+    const onSuccess = (data: BacktestResult) => {
+      store.setResult(data);
+      store.setIsRunning(false);
+    };
+    const onError = (err: Error) => {
+      store.setError(
+        err instanceof Error ? err.message : "백테스트 실행 실패",
+      );
+      store.setIsRunning(false);
+    };
+
+    if (store.isCustomMode && store.customYaml) {
+      const symbols = store.symbols
+        .split(",")
+        .map((sym) => sym.trim())
+        .filter(Boolean);
+      customMutation.mutate(
+        {
+          yaml_content: store.customYaml,
+          symbols,
+          start_date: store.startDate,
+          end_date: store.endDate,
+          initial_capital: store.initialCapital,
+          commission_rate: store.commissionRate,
+          tax_rate: store.taxRate,
+          slippage: store.slippage,
+        },
+        { onSuccess, onError },
+      );
+    } else {
+      const request = store.buildRequest();
+      mutation.mutate(request, { onSuccess, onError });
+    }
+  }, [store, mutation, customMutation]);
 
   const saveMutation = useSaveBacktestResult();
   const [savedCacheKey, setSavedCacheKey] = useState<string | null>(null);
@@ -503,7 +561,7 @@ export default function BacktestPage() {
   }, [store.result, store.strategyId, store.symbols, selectedStrategy?.name]);
 
   const canRun =
-    store.strategyId &&
+    (store.strategyId || store.isCustomMode) &&
     store.symbols.trim() &&
     store.startDate &&
     store.endDate &&
@@ -556,12 +614,19 @@ export default function BacktestPage() {
                   strategies={strategies ?? []}
                   selectedId={store.strategyId}
                   onSelect={store.applyStrategyDefaults}
+                  isCustomMode={store.isCustomMode}
+                  customStrategyName={store.customStrategyName}
+                  onClearCustom={store.clearCustomMode}
                 />
-                {selectedStrategy && (
+                {store.isCustomMode ? (
+                  <p className="text-xs text-muted-foreground">
+                    전략 빌더에서 생성한 커스텀 YAML 전략으로 백테스트를 실행합니다.
+                  </p>
+                ) : selectedStrategy ? (
                   <p className="text-xs text-muted-foreground">
                     {selectedStrategy.description}
                   </p>
-                )}
+                ) : null}
               </>
             )}
 
@@ -673,7 +738,11 @@ export default function BacktestPage() {
             <CardTitle className="text-base">전략 파라미터</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedStrategy ? (
+            {store.isCustomMode ? (
+              <p className="text-sm text-muted-foreground">
+                커스텀 전략은 YAML에 정의된 파라미터를 사용합니다.
+              </p>
+            ) : selectedStrategy ? (
               Object.keys(selectedStrategy.params ?? {}).length > 0 ? (
                 Object.entries(selectedStrategy.params ?? {}).map(([name, p]) => {
                   if (p.type === "bool") {

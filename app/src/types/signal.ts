@@ -13,6 +13,7 @@ export interface SignalExecuteRequest {
   strategy_id: string;
   stocks: string[];
   params?: Record<string, unknown>;
+  builder_state?: import("@/types/strategy").BuilderState;
 }
 
 export interface SignalExecuteResponse {

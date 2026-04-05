@@ -27,8 +27,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -208,15 +206,12 @@ function CreateJournalDialog() {
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button size="sm" className="gap-1 min-h-[44px]" nativeButton={false} />
-        }
-      >
+    <>
+      <Button size="sm" className="gap-1 min-h-[44px]" onClick={() => setOpen(true)}>
         <Plus className="size-4" />
         매매 기록 추가
-      </DialogTrigger>
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>매매 기록 추가</DialogTitle>
@@ -364,18 +359,17 @@ function CreateJournalDialog() {
           )}
 
           <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" nativeButton={false} />}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)}>
               취소
-            </DialogClose>
+            </Button>
             <Button type="submit" disabled={createJournal.isPending}>
               {createJournal.isPending ? "저장 중..." : "저장"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }
 

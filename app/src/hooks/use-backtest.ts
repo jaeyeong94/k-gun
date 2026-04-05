@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api/client";
-import type { BacktestStrategy as Strategy, BacktestRequest, BacktestResult } from "@/types/backtest";
+import type { BacktestStrategy as Strategy, BacktestRequest, BacktestResult, CustomBacktestRequest } from "@/types/backtest";
 
 export function useStrategies() {
   return useQuery({
@@ -37,6 +37,19 @@ export function useRunBacktest() {
     mutationFn: async (request: BacktestRequest) => {
       const res = await apiPost<{ success: boolean; data: BacktestResult }>(
         "/api/backtest/backtest/run",
+        request,
+        false,
+      );
+      return res.data;
+    },
+  });
+}
+
+export function useRunCustomBacktest() {
+  return useMutation({
+    mutationFn: async (request: CustomBacktestRequest) => {
+      const res = await apiPost<{ success: boolean; data: BacktestResult }>(
+        "/api/backtest/backtest/run-custom",
         request,
         false,
       );

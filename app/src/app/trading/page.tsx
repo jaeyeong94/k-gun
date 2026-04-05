@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth";
 import { useTradingStore } from "@/stores/trading";
+import { loadCustomStrategy } from "@/lib/custom-strategy";
 import {
   useStrategies,
   useSignalExecution,
@@ -83,7 +84,24 @@ function StrategyPanel() {
     stockCodes,
     setStockCodes,
     isGenerating,
+    isCustomMode,
+    customBuilderState,
+    customStrategyName,
+    setCustomMode,
+    clearCustomMode,
   } = useTradingStore();
+
+  // URL 파라미터에서 커스텀 전략 로드
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("custom") === "true") {
+      const saved = loadCustomStrategy();
+      if (saved) {
+        setCustomMode(saved.builderState, saved.name);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const strategiesQuery = useStrategies();
   const signalMutation = useSignalExecution();
@@ -91,16 +109,25 @@ function StrategyPanel() {
   const strategies = strategiesQuery.data?.data ?? [];
 
   const handleGenerate = useCallback(() => {
-    if (!selectedStrategyId || !stockCodes.trim()) return;
+    if ((!selectedStrategyId && !isCustomMode) || !stockCodes.trim()) return;
     const codes = stockCodes
       .split(/[,\s]+/)
       .map((c) => c.trim())
       .filter(Boolean);
-    signalMutation.mutate({
-      strategy_id: selectedStrategyId,
-      stocks: codes,
-    });
-  }, [selectedStrategyId, stockCodes, signalMutation]);
+
+    if (isCustomMode && customBuilderState) {
+      signalMutation.mutate({
+        strategy_id: "local_custom",
+        stocks: codes,
+        builder_state: customBuilderState,
+      });
+    } else {
+      signalMutation.mutate({
+        strategy_id: selectedStrategyId!,
+        stocks: codes,
+      });
+    }
+  }, [selectedStrategyId, stockCodes, signalMutation, isCustomMode, customBuilderState]);
 
   return (
     <Card className="h-full">
@@ -112,38 +139,60 @@ function StrategyPanel() {
         <CardDescription>전략과 종목을 선택하고 신호를 생성합니다</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Strategy selector */}
-        <div className="space-y-2">
-          <Label>전략 선택</Label>
-          {strategiesQuery.isLoading ? (
-            <Skeleton className="h-8 w-full" />
-          ) : strategies.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              등록된 전략이 없습니다
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {strategies.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedStrategy(s.id)}
-                  className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors min-h-[44px] ${
-                    selectedStrategyId === s.id
-                      ? "border-primary bg-primary/5 text-foreground"
-                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-medium">{s.name}</div>
-                  {s.description && (
-                    <div className="mt-0.5 text-xs opacity-70">
-                      {s.description}
-                    </div>
-                  )}
-                </button>
-              ))}
+        {/* Custom strategy card */}
+        {isCustomMode && (
+          <div className="rounded-lg border border-primary bg-primary/5 px-3 py-3 text-left text-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="shrink-0">커스텀</Badge>
+                  <span className="font-medium">{customStrategyName || "커스텀 전략"}</span>
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  전략 빌더에서 생성한 전략
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearCustomMode} className="h-6 px-2 text-xs">
+                해제
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Strategy selector */}
+        {!isCustomMode && (
+          <div className="space-y-2">
+            <Label>전략 선택</Label>
+            {strategiesQuery.isLoading ? (
+              <Skeleton className="h-8 w-full" />
+            ) : strategies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                등록된 전략이 없습니다
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {strategies.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSelectedStrategy(s.id)}
+                    className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors min-h-[44px] ${
+                      selectedStrategyId === s.id
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-medium">{s.name}</div>
+                    {s.description && (
+                      <div className="mt-0.5 text-xs opacity-70">
+                        {s.description}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <Separator />
 
@@ -161,7 +210,7 @@ function StrategyPanel() {
         <Button
           className="w-full min-h-[44px]"
           onClick={handleGenerate}
-          disabled={!selectedStrategyId || !stockCodes.trim() || isGenerating}
+          disabled={(!selectedStrategyId && !isCustomMode) || !stockCodes.trim() || isGenerating}
         >
           {isGenerating ? (
             <Loader2 className="mr-1.5 size-4 animate-spin" />
