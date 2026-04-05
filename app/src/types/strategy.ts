@@ -29,10 +29,13 @@ export const CATEGORY_LABELS: Record<StrategyCategory, string> = {
 
 export interface Indicator {
   name: string;
-  display_name: string;
-  category: string;
-  parameters: IndicatorParam[];
-  description: string;
+  label?: string;
+  display_name?: string;
+  category?: string;
+  params?: string[];
+  parameters?: IndicatorParam[];
+  example?: string;
+  description?: string;
 }
 
 export interface IndicatorParam {

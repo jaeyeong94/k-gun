@@ -256,7 +256,7 @@ export default function BuilderPage() {
                                   {selected && (
                                     <Check className="mr-1 size-3" />
                                   )}
-                                  {ind.display_name || ind.name}
+                                  {ind.label ? `${ind.label}(${ind.name})` : ind.name}
                                 </Button>
                               );
                             })}
@@ -276,16 +276,19 @@ export default function BuilderPage() {
                     <span className="text-sm text-muted-foreground mr-1">
                       선택됨:
                     </span>
-                    {store.selectedIndicators.map((name) => (
-                      <Badge
-                        key={name}
-                        variant="secondary"
-                        className="cursor-pointer"
-                        onClick={() => store.toggleIndicator(name)}
-                      >
-                        {name} &times;
-                      </Badge>
-                    ))}
+                    {store.selectedIndicators.map((name) => {
+                      const ind = indicators.find((i) => i.name === name);
+                      return (
+                        <Badge
+                          key={name}
+                          variant="secondary"
+                          className="cursor-pointer"
+                          onClick={() => store.toggleIndicator(name)}
+                        >
+                          {ind?.label ? `${ind.label}(${name})` : name} &times;
+                        </Badge>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
