@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { useBalance, useHoldings, useMarketIndex } from "@/hooks/use-account";
 import { Button } from "@/components/ui/button";
@@ -51,43 +53,20 @@ function ProfitText({ value, suffix = "원" }: { value: number; suffix?: string 
 }
 
 export default function DashboardPage() {
-  const { authenticated, mode, isLoading, login } = useAuthStore();
+  const { authenticated, mode } = useAuthStore();
   const balance = useBalance();
   const holdings = useHoldings();
   const marketIndex = useMarketIndex();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authenticated) {
+      router.replace("/login");
+    }
+  }, [authenticated, router]);
 
   if (!authenticated) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">K-Gun</CardTitle>
-            <CardDescription>
-              한국투자증권 Open API 트레이딩 컨트롤패널
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Button
-              onClick={() => login("vps")}
-              disabled={isLoading}
-              className="w-full min-h-[44px]"
-            >
-              <LogIn className="mr-2 size-4" />
-              {isLoading ? "인증 중..." : "모의투자 로그인"}
-            </Button>
-            <Button
-              onClick={() => login("prod")}
-              disabled={isLoading}
-              variant="destructive"
-              className="w-full min-h-[44px]"
-            >
-              <LogIn className="mr-2 size-4" />
-              {isLoading ? "인증 중..." : "실전투자 로그인"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   const bal = balance.data?.data;

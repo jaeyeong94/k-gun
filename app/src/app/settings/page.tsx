@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import { useAuthStore } from "@/stores/auth";
 import { useThemeStore } from "@/stores/theme";
 import { Button } from "@/components/ui/button";
@@ -67,21 +67,26 @@ function NotificationSettingsCard() {
   const { enabled, requestPermission, clearNotifications, notifications } =
     useNotificationStore();
 
-  const getPermission = useCallback((): "granted" | "denied" | "default" | "unsupported" => {
-    if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
-    return Notification.permission as "granted" | "denied" | "default";
-  }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []); // eslint-disable-line react-hooks/set-state-in-effect
 
-  const [permissionStatus, setPermissionStatus] = useState(getPermission);
-
-  // Re-sync after permission request
-  const syncPermission = useCallback(() => {
-    setPermissionStatus(getPermission());
-  }, [getPermission]);
+  const [permRefresh, setPermRefresh] = useState(0);
+  const permissionStatus = useSyncExternalStore(
+    useCallback((cb) => {
+      // No native event for permission change; re-sync via permRefresh
+      void permRefresh; // keep dep
+      return () => {};
+    }, [permRefresh]),
+    () => {
+      if (!("Notification" in window)) return "unsupported" as const;
+      return Notification.permission as "granted" | "denied" | "default";
+    },
+    () => "default" as const,
+  );
 
   const handleRequestPermission = async () => {
     await requestPermission();
-    syncPermission();
+    setPermRefresh((n) => n + 1);
   };
 
   const statusText: Record<string, string> = {
@@ -98,6 +103,21 @@ function NotificationSettingsCard() {
       default: "outline",
       unsupported: "outline",
     };
+
+  if (!mounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>알림</CardTitle>
+          <CardDescription>브라우저 푸시 알림 설정</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-9 w-32" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { TopBar } from "@/components/layout/top-bar";
-import { StatusBar } from "@/components/layout/status-bar";
+import { AppShell } from "@/components/layout/app-shell";
 import { ThemeInitializer } from "@/components/layout/theme-initializer";
 
 const geistSans = Geist({
@@ -39,12 +37,7 @@ export default function RootLayout({
       <body className="flex h-full flex-col" suppressHydrationWarning>
         <ThemeInitializer />
         <Providers>
-          <AppSidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <TopBar />
-            <main className="flex-1 overflow-y-auto p-3 sm:p-4">{children}</main>
-            <StatusBar />
-          </div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
