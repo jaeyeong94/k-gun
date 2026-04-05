@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LogIn, TrendingUp } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,16 +31,18 @@ export default function LoginPage() {
   if (authenticated) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <TrendingUp className="size-8" />
-          </div>
+        <div className="flex flex-col items-center gap-4">
+          <img
+            src="/kgun-logo.svg"
+            alt="투깨비"
+            className="h-20 w-20 rounded-2xl"
+          />
           <div className="text-center">
             <h1 className="text-3xl font-bold">투깨비</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               한국투자증권 Open API 트레이딩 컨트롤패널
             </p>
           </div>
